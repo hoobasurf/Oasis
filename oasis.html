@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OASIS — Le Monde Libre</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap');
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+background: #000;
+overflow: hidden;
+font-family: ‘Rajdhani’, sans-serif;
+color: #fff;
+cursor: none;
+}
+
+#gameCanvas { display: block; }
+
+#hud {
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+pointer-events: none;
+z-index: 10;
+}
+
+#topBar {
+position: absolute;
+top: 20px; left: 50%;
+transform: translateX(-50%);
+display: flex;
+gap: 30px;
+align-items: center;
+}
+
+.hud-panel {
+background: rgba(0,20,40,0.8);
+border: 1px solid rgba(0,200,255,0.4);
+border-radius: 8px;
+padding: 8px 16px;
+font-family: ‘Orbitron’, monospace;
+font-size: 12px;
+color: #00d4ff;
+text-shadow: 0 0 10px #00d4ff;
+backdrop-filter: blur(10px);
+}
+
+#gameTitle {
+font-family: ‘Orbitron’, monospace;
+font-size: 20px;
+font-weight: 900;
+background: linear-gradient(90deg, #00d4ff, #ff00ff, #00ff88);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+text-shadow: none;
+letter-spacing: 4px;
+}
+
+#minimap {
+position: absolute;
+bottom: 20px;
+right: 20px;
+width: 180px;
+height: 180px;
+background: rgba(0,10,30,0.85);
+border: 1px solid rgba(0,200,255,0.5);
+border-radius: 12px;
+overflow: hidden;
+}
+
+#minimapCanvas { display: block; }
+
+#bottomLeft {
+position: absolute;
+bottom: 20px;
+left: 20px;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+#controls {
+position: absolute;
+bottom: 20px;
+left: 50%;
+transform: translateX(-50%);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 4px;
+pointer-events: none;
+}
+
+.ctrl-row { display: flex; gap: 4px; }
+
+.key {
+background: rgba(0,30,60,0.8);
+border: 1px solid rgba(0,200,255,0.5);
+border-radius: 6px;
+width: 36px; height: 36px;
+display: flex; align-items: center; justify-content: center;
+font-family: ‘Orbitron’, monospace;
+font-size: 11px;
+color: #00d4ff;
+}
+
+.key.wide { width: 80px; }
+
+#notification {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+font-family: ‘Orbitron’, monospace;
+font-size: 28px;
+font-weight: 900;
+text-align: center;
+opacity: 0;
+transition: opacity 0.3s;
+text-shadow: 0 0 30px currentColor;
+}
+
+#zoneLabel {
+position: absolute;
+top: 80px;
+left: 50%;
+transform: translateX(-50%);
+font-family: ‘Orbitron’, monospace;
+font-size: 14px;
+color: rgba(255,255,255,0.6);
+letter-spacing: 3px;
+text-transform: uppercase;
+}
+
+#customCursor {
+position: fixed;
+width: 20px; height: 20px;
+pointer-events: none;
+z-index: 9999;
+transform: translate(-50%, -50%);
+}
+
+#customCursor::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+border: 2px solid #00d4ff;
+border-radius: 50%;
+box-shadow: 0 0 10px #00d4ff;
+animation: pulseCursor 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseCursor {
+0%, 100% { transform: scale(1); opacity: 1; }
+50% { transform: scale(1.4); opacity: 0.5; }
+}
+
+#startScreen {
+position: fixed;
+inset: 0;
+background: radial-gradient(ellipse at center, #001525 0%, #000 70%);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 100;
+}
+
+#startTitle {
+font-family: ‘Orbitron’, monospace;
+font-size: 72px;
+font-weight: 900;
+background: linear-gradient(135deg, #00d4ff, #ff00ff, #00ff88, #ff6600);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+letter-spacing: 8px;
+margin-bottom: 10px;
+animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+from { filter: brightness(1) drop-shadow(0 0 20px #00d4ff); }
+to { filter: brightness(1.3) drop-shadow(0 0 40px #ff00ff); }
+}
+
+#startSub {
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 20px;
+color: rgba(255,255,255,0.5);
+letter-spacing: 6px;
+margin-bottom: 60px;
+}
+
+#nameInput {
+background: rgba(0,30,60,0.8);
+border: 2px solid #00d4ff;
+border-radius: 12px;
+padding: 14px 24px;
+font-family: ‘Orbitron’, monospace;
+font-size: 18px;
+color: #00d4ff;
+text-align: center;
+outline: none;
+width: 320px;
+margin-bottom: 20px;
+box-shadow: 0 0 20px rgba(0,212,255,0.3);
+}
+
+#nameInput::placeholder { color: rgba(0,212,255,0.3); }
+
+#startBtn {
+background: linear-gradient(135deg, #00d4ff, #0066ff);
+border: none;
+border-radius: 12px;
+padding: 16px 60px;
+font-family: ‘Orbitron’, monospace;
+font-size: 16px;
+font-weight: 700;
+color: #000;
+cursor: pointer;
+letter-spacing: 3px;
+transition: all 0.3s;
+box-shadow: 0 0 30px rgba(0,212,255,0.5);
+}
+
+#startBtn:hover {
+transform: scale(1.05);
+box-shadow: 0 0 50px rgba(0,212,255,0.8);
+}
+
+.start-feature {
+margin-top: 40px;
+display: flex;
+gap: 30px;
+color: rgba(255,255,255,0.3);
+font-size: 13px;
+letter-spacing: 2px;
+}
+
+.feature-item {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.feature-dot {
+width: 8px; height: 8px;
+border-radius: 50%;
+background: #00d4ff;
+box-shadow: 0 0 8px #00d4ff;
+}
+</style>
+
+</head>
+<body>
+
+<div id="customCursor"></div>
+
+<div id="startScreen">
+  <div id="startTitle">OASIS</div>
+  <div id="startSub">LE MONDE SANS LIMITES</div>
+  <input id="nameInput" type="text" placeholder="TON PSEUDO..." maxlength="16" />
+  <button id="startBtn" onclick="startGame()">ENTRER DANS L'OASIS</button>
+  <div class="start-feature">
+    <div class="feature-item"><div class="feature-dot"></div> MONDE LIBRE</div>
+    <div class="feature-item"><div class="feature-dot" style="background:#ff00ff;box-shadow:0 0 8px #ff00ff"></div> MULTIZONES</div>
+    <div class="feature-item"><div class="feature-dot" style="background:#00ff88;box-shadow:0 0 8px #00ff88"></div> ÉVOLUTION</div>
+  </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="hud">
+  <div id="topBar">
+    <div class="hud-panel">❤️ <span id="hpVal">100</span></div>
+    <div id="gameTitle">OASIS</div>
+    <div class="hud-panel">💰 <span id="goldVal">500</span> credits</div>
+  </div>
+  <div id="zoneLabel" id="zoneLabel"></div>
+  <div id="notification"></div>
+
+  <div id="minimap">
+    <canvas id="minimapCanvas" width="180" height="180"></canvas>
+  </div>
+
+  <div id="bottomLeft">
+    <div class="hud-panel">👾 <span id="playerName">Player</span> — LVL <span id="lvlVal">1</span></div>
+    <div class="hud-panel">🌐 Zone : <span id="zoneVal">Hub Central</span></div>
+  </div>
+
+  <div id="controls">
+    <div class="ctrl-row">
+      <div class="key">Z</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="key">Q</div>
+      <div class="key">S</div>
+      <div class="key">D</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="key wide">ESPACE</div>
+    </div>
+    <div style="color:rgba(255,255,255,0.3);font-size:10px;letter-spacing:2px;margin-top:4px;">E: INTERAGIR | F: SPRINT</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const mmCanvas = document.getElementById('minimapCanvas');
+const mmCtx = mmCanvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Custom cursor
+const cursor = document.getElementById('customCursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+
+// Game State
+const state = {
+  playerName: 'Player',
+  hp: 100,
+  gold: 500,
+  lvl: 1,
+  xp: 0,
+  running: false
+};
+
+// World Config
+const WORLD_W = 4000;
+const WORLD_H = 4000;
+const TILE = 80;
+
+// Camera
+const cam = { x: 0, y: 0 };
+
+// Player
+const player = {
+  x: WORLD_W / 2,
+  y: WORLD_H / 2,
+  w: 28, h: 28,
+  speed: 3.5,
+  sprintSpeed: 6,
+  color: '#00d4ff',
+  trailColor: 'rgba(0,212,255,',
+  trail: [],
+  dir: 0,
+  moving: false
+};
+
+// Keys
+const keys = {};
+document.addEventListener('keydown', e => { keys[e.code] = true; });
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// Zones definition
+const zones = [
+  { name: 'Hub Central', x: 1600, y: 1600, w: 800, h: 800, color: '#001a3a', border: '#00d4ff', label: '🌐 Hub Central' },
+  { name: 'Neon City', x: 400, y: 400, w: 1000, h: 700, color: '#1a0030', border: '#ff00ff', label: '🏙️ Neon City' },
+  { name: 'Zone Combat', x: 2600, y: 300, w: 900, h: 800, color: '#2a0000', border: '#ff3300', label: '⚔️ Zone Combat' },
+  { name: 'Ocean Pixel', x: 200, y: 2500, w: 1200, h: 800, color: '#001a20', border: '#00ffcc', label: '🌊 Ocean Pixel' },
+  { name: 'Grotte des Codes', x: 2800, y: 2300, w: 700, h: 700, color: '#0a1a00', border: '#00ff44', label: '💻 Grotte des Codes' },
+  { name: 'Désert de Sable', x: 1400, y: 2800, w: 1000, h: 900, color: '#2a1500', border: '#ffaa00', label: '🏜️ Désert de Sable' },
+];
+
+// Buildings / Objects
+const buildings = [];
+const npcs = [];
+const particles = [];
+const collectibles = [];
+
+function initWorld() {
+  // Buildings in Hub
+  for (let i = 0; i < 12; i++) {
+    buildings.push({
+      x: 1650 + Math.random() * 700,
+      y: 1650 + Math.random() * 700,
+      w: 40 + Math.random() * 80,
+      h: 40 + Math.random() * 80,
+      color: `hsl(${200 + Math.random() * 40}, 70%, ${15 + Math.random() * 20}%)`,
+      border: `hsl(${200 + Math.random() * 40}, 100%, 60%)`,
+      type: 'building'
+    });
+  }
+
+  // Neon City buildings
+  for (let i = 0; i < 25; i++) {
+    buildings.push({
+      x: 420 + Math.random() * 950,
+      y: 420 + Math.random() * 650,
+      w: 30 + Math.random() * 100,
+      h: 50 + Math.random() * 150,
+      color: `hsl(${280 + Math.random() * 40}, 60%, ${10 + Math.random() * 15}%)`,
+      border: `hsl(${280 + Math.random() * 60}, 100%, 60%)`,
+      type: 'building'
+    });
+  }
+
+  // Combat zone objects
+  for (let i = 0; i < 15; i++) {
+    buildings.push({
+      x: 2620 + Math.random() * 850,
+      y: 320 + Math.random() * 750,
+      w: 25 + Math.random() * 60,
+      h: 25 + Math.random() * 60,
+      color: '#1a0800',
+      border: '#ff4400',
+      type: 'obstacle'
+    });
+  }
+
+  // NPCs
+  const npcData = [
+    { x: 2020, y: 1900, name: 'Marchande Zara', color: '#ff00ff', dialog: '🛒 Bienvenue ! Tu veux acheter des items ?' },
+    { x: 1900, y: 2100, name: 'Hacker Rex', color: '#00ff44', dialog: '💻 Je peux te donner accès à des zones secrètes...' },
+    { x: 2100, y: 2000, name: 'Guerrier Kaz', color: '#ff4400', dialog: '⚔️ Rejoins-moi pour combattre dans la Zone Rouge !' },
+    { x: 700, y: 700, name: 'DJ Ghost', color: '#aa00ff', dialog: '🎵 La Neon City pulse à mon rythme !' },
+    { x: 3000, y: 700, name: 'Bounty Hunter', color: '#ff0000', dialog: '🎯 Il y a une prime sur ta tête. Sois prudent.' },
+  ];
+
+  npcData.forEach(n => {
+    npcs.push({ ...n, w: 24, h: 24, talking: false, talkTimer: 0 });
+  });
+
+  // Collectibles
+  for (let i = 0; i < 40; i++) {
+    collectibles.push({
+      x: 500 + Math.random() * 3000,
+      y: 500 + Math.random() * 3000,
+      type: Math.random() > 0.5 ? 'gold' : 'xp',
+      value: Math.floor(10 + Math.random() * 50),
+      r: 10 + Math.random() * 5,
+      collected: false,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+// Current zone
+function getCurrentZone() {
+  for (const z of zones) {
+    if (player.x > z.x && player.x < z.x + z.w && player.y > z.y && player.y < z.y + z.h) {
+      return z;
+    }
+  }
+  return null;
+}
+
+let lastZone = null;
+let notifTimer = 0;
+
+function showNotif(text, color = '#00d4ff') {
+  const el = document.getElementById('notification');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.opacity = '1';
+  notifTimer = 180;
+}
+
+// Draw world grid (tiled floor)
+function drawGrid() {
+  const startX = Math.floor(cam.x / TILE) * TILE - cam.x;
+  const startY = Math.floor(cam.y / TILE) * TILE - cam.y;
+
+  for (let x = startX; x < canvas.width + TILE; x += TILE) {
+    for (let y = startY; y < canvas.height + TILE; y += TILE) {
+      const wx = x + cam.x;
+      const wy = y + cam.y;
+      if (wx >= 0 && wx < WORLD_W && wy >= 0 && wy < WORLD_H) {
+        ctx.fillStyle = 'rgba(0,30,60,0.3)';
+        ctx.fillRect(x, y, TILE - 1, TILE - 1);
+      }
+    }
+  }
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,100,200,0.08)';
+  ctx.lineWidth = 1;
+  for (let x = startX; x < canvas.width + TILE; x += TILE) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = startY; y < canvas.height + TILE; y += TILE) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+}
+
+function drawZones() {
+  zones.forEach(z => {
+    const sx = z.x - cam.x, sy = z.y - cam.y;
+
+    // Fill
+    ctx.fillStyle = z.color;
+    ctx.fillRect(sx, sy, z.w, z.h);
+
+    // Border glow
+    ctx.shadowColor = z.border;
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = z.border;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx, sy, z.w, z.h);
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.fillStyle = z.border;
+    ctx.font = 'bold 13px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.label, sx + z.w / 2, sy + 24);
+    ctx.textAlign = 'left';
+  });
+}
+
+function drawBuildings() {
+  buildings.forEach(b => {
+    const sx = b.x - cam.x, sy = b.y - cam.y;
+    if (sx < -200 || sx > canvas.width + 200 || sy < -200 || sy > canvas.height + 200) return;
+
+    ctx.fillStyle = b.color;
+    ctx.fillRect(sx, sy, b.w, b.h);
+
+    ctx.shadowColor = b.border;
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = b.border;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(sx, sy, b.w, b.h);
+    ctx.shadowBlur = 0;
+
+    // Windows
+    if (b.type === 'building') {
+      for (let wx = sx + 6; wx < sx + b.w - 6; wx += 14) {
+        for (let wy = sy + 6; wy < sy + b.h - 6; wy += 14) {
+          if (Math.random() > 0.3) {
+            ctx.fillStyle = `rgba(${Math.random() > 0.5 ? '0,200,255' : '255,0,200'},${0.3 + Math.random() * 0.5})`;
+            ctx.fillRect(wx, wy, 8, 8);
+          }
+        }
+      }
+    }
+  });
+}
+
+function drawCollectibles(t) {
+  collectibles.forEach(c => {
+    if (c.collected) return;
+    c.pulse += 0.05;
+    const sx = c.x - cam.x, sy = c.y - cam.y;
+    if (sx < -50 || sx > canvas.width + 50) return;
+
+    const pulse = Math.sin(c.pulse) * 3;
+    const color = c.type === 'gold' ? '#ffcc00' : '#00ff88';
+
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(sx, sy, c.r + pulse * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 9px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText(c.type === 'gold' ? '💰' : '⭐', sx, sy + 4);
+    ctx.textAlign = 'left';
+
+    // Check collection
+    const dx = player.x - c.x, dy = player.y - c.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 25) {
+      c.collected = true;
+      if (c.type === 'gold') {
+        state.gold += c.value;
+        document.getElementById('goldVal').textContent = state.gold;
+        showNotif(`+${c.value} Crédits !`, '#ffcc00');
+      } else {
+        state.xp += c.value;
+        document.getElementById('goldVal').textContent = state.gold;
+        if (state.xp >= state.lvl * 100) {
+          state.xp = 0;
+          state.lvl++;
+          document.getElementById('lvlVal').textContent = state.lvl;
+          showNotif(`🎉 LEVEL UP ! Niveau ${state.lvl}`, '#00ff88');
+        }
+      }
+      spawnParticles(sx, sy, color, 12);
+    }
+  });
+}
+
+function drawNPCs(t) {
+  npcs.forEach(npc => {
+    const sx = npc.x - cam.x, sy = npc.y - cam.y;
+    if (sx < -100 || sx > canvas.width + 100) return;
+
+    // Float animation
+    const float = Math.sin(t * 0.002 + npc.x) * 3;
+
+    // Glow
+    ctx.shadowColor = npc.color;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = npc.color;
+    ctx.fillRect(sx - npc.w / 2, sy - npc.h / 2 + float, npc.w, npc.h);
+    ctx.shadowBlur = 0;
+
+    // NPC name
+    ctx.fillStyle = npc.color;
+    ctx.font = '10px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText(npc.name, sx, sy - npc.h / 2 + float - 8);
+
+    // Interact indicator
+    const dx = player.x - npc.x, dy = player.y - npc.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 80) {
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = 'bold 10px Orbitron';
+      ctx.fillText('[E] Parler', sx, sy + npc.h / 2 + float + 16);
+
+      if (keys['KeyE']) {
+        if (!npc.talking) {
+          npc.talking = true;
+          npc.talkTimer = 200;
+          showNotif(npc.dialog, npc.color);
+        }
+      }
+    }
+
+    ctx.textAlign = 'left';
+    if (npc.talkTimer > 0) npc.talkTimer--;
+    else npc.talking = false;
+  });
+}
+
+function drawPlayer(t) {
+  // Trail
+  player.trail.push({ x: player.x - cam.x, y: player.y - cam.y });
+  if (player.trail.length > 18) player.trail.shift();
+
+  player.trail.forEach((pt, i) => {
+    const alpha = (i / player.trail.length) * 0.5;
+    ctx.fillStyle = player.trailColor + alpha + ')';
+    const size = (i / player.trail.length) * player.w * 0.7;
+    ctx.fillRect(pt.x - size / 2, pt.y - size / 2, size, size);
+  });
+
+  const px = player.x - cam.x, py = player.y - cam.y;
+
+  // Outer glow
+  ctx.shadowColor = player.color;
+  ctx.shadowBlur = 30;
+
+  // Body
+  ctx.fillStyle = player.color;
+  ctx.fillRect(px - player.w / 2, py - player.h / 2, player.w, player.h);
+
+  // Inner highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillRect(px - player.w / 2 + 4, py - player.h / 2 + 4, player.w / 3, player.h / 3);
+
+  ctx.shadowBlur = 0;
+
+  // Name above
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px Orbitron';
+  ctx.textAlign = 'center';
+  ctx.fillText(state.playerName, px, py - player.h / 2 - 8);
+  ctx.textAlign = 'left';
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * (2 + Math.random() * 4),
+      vy: Math.sin(angle) * (2 + Math.random() * 4),
+      color,
+      life: 60,
+      maxLife: 60,
+      r: 2 + Math.random() * 4
+    });
+  }
+}
+
+function drawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= 0.92; p.vy *= 0.92;
+    p.life--;
+
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+    const alpha = p.life / p.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawMinimap() {
+  const scale = 180 / WORLD_W;
+  mmCtx.fillStyle = '#000a1a';
+  mmCtx.fillRect(0, 0, 180, 180);
+
+  zones.forEach(z => {
+    mmCtx.fillStyle = z.color.replace(')', ',0.7)').replace('rgb', 'rgba');
+    mmCtx.fillRect(z.x * scale, z.y * scale, z.w * scale, z.h * scale);
+    mmCtx.strokeStyle = z.border;
+    mmCtx.lineWidth = 1;
+    mmCtx.strokeRect(z.x * scale, z.y * scale, z.w * scale, z.h * scale);
+  });
+
+  npcs.forEach(n => {
+    mmCtx.fillStyle = n.color;
+    mmCtx.fillRect(n.x * scale - 2, n.y * scale - 2, 4, 4);
+  });
+
+  collectibles.filter(c => !c.collected).forEach(c => {
+    mmCtx.fillStyle = c.type === 'gold' ? '#ffcc00' : '#00ff88';
+    mmCtx.fillRect(c.x * scale - 1, c.y * scale - 1, 2, 2);
+  });
+
+  // Player dot
+  const px = player.x * scale, py = player.y * scale;
+  mmCtx.fillStyle = '#fff';
+  mmCtx.shadowColor = '#00d4ff';
+  mmCtx.shadowBlur = 6;
+  mmCtx.fillRect(px - 3, py - 3, 6, 6);
+  mmCtx.shadowBlur = 0;
+
+  // View rect
+  mmCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+  mmCtx.lineWidth = 1;
+  mmCtx.strokeRect(cam.x * scale, cam.y * scale, canvas.width * scale, canvas.height * scale);
+
+  // Border
+  mmCtx.strokeStyle = 'rgba(0,200,255,0.6)';
+  mmCtx.lineWidth = 2;
+  mmCtx.strokeRect(0, 0, 180, 180);
+}
+
+function updatePlayer() {
+  const isSprint = keys['KeyF'] || keys['ShiftLeft'];
+  const speed = isSprint ? player.sprintSpeed : player.speed;
+  let moved = false;
+
+  if (keys['KeyZ'] || keys['ArrowUp']) { player.y = Math.max(0, player.y - speed); moved = true; }
+  if (keys['KeyS'] || keys['ArrowDown']) { player.y = Math.min(WORLD_H, player.y + speed); moved = true; }
+  if (keys['KeyQ'] || keys['ArrowLeft']) { player.x = Math.max(0, player.x - speed); moved = true; }
+  if (keys['KeyD'] || keys['ArrowRight']) { player.x = Math.min(WORLD_W, player.x + speed); moved = true; }
+  if (keys['Space']) { moved = true; spawnParticles(player.x - cam.x, player.y - cam.y, player.color, 5); }
+
+  player.moving = moved;
+  if (isSprint && moved) player.trailColor = 'rgba(255,100,0,';
+  else player.trailColor = 'rgba(0,212,255,';
+
+  // Camera follow
+  cam.x = Math.max(0, Math.min(WORLD_W - canvas.width, player.x - canvas.width / 2));
+  cam.y = Math.max(0, Math.min(WORLD_H - canvas.height, player.y - canvas.height / 2));
+
+  // Zone check
+  const z = getCurrentZone();
+  const zoneName = z ? z.name : 'Zone Sauvage';
+  if (z !== lastZone) {
+    lastZone = z;
+    document.getElementById('zoneVal').textContent = zoneName;
+    if (z) showNotif('📍 ' + z.label, z.border);
+    document.getElementById('zoneLabel').textContent = zoneName;
+  }
+}
+
+let frameTime = 0;
+
+function gameLoop(t) {
+  frameTime = t;
+
+  // Background
+  ctx.fillStyle = '#000408';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Starfield
+  for (let i = 0; i < 3; i++) {
+    const sx = ((i * 137 + t * 0.01) % canvas.width);
+    const sy = ((i * 97 + t * 0.008) % canvas.height);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+
+  drawGrid();
+  drawZones();
+  drawBuildings();
+  drawCollectibles(t);
+  drawNPCs(t);
+  drawParticles();
+  drawPlayer(t);
+  drawMinimap();
+  updatePlayer();
+
+  // Notif fade
+  if (notifTimer > 0) {
+    notifTimer--;
+    const el = document.getElementById('notification');
+    if (notifTimer < 40) el.style.opacity = (notifTimer / 40).toString();
+    else el.style.opacity = '1';
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+  const nameInput = document.getElementById('nameInput');
+  state.playerName = nameInput.value.trim() || 'Joueur';
+  document.getElementById('playerName').textContent = state.playerName;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('nameInput').style.display = 'none';
+  initWorld();
+  requestAnimationFrame(gameLoop);
+}
+
+// Enter key to start
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
