@@ -233,7 +233,7 @@ CTX.beginPath();
 for(var s=0;s<8;s++){var a=s*Math.PI/4; var rr=s%2===0?r:r*0.42; CTX.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
 CTX.closePath(); CTX.fill(); CTX.restore();
 }
-CTX.shadowBlur=0;
+CTX.globalAlpha=1;CTX.shadowBlur=0;
 }
 
 function drawDarkStars(A,B,C,D,tick,wx){
@@ -248,7 +248,7 @@ CTX.beginPath();
 for(var s=0;s<10;s++){var a=s*Math.PI/5-Math.PI/2; var rr=s%2===0?r:r*0.42; if(s===0)CTX.moveTo(sx+Math.cos(a)*rr,sy+Math.sin(a)*rr); else CTX.lineTo(sx+Math.cos(a)*rr,sy+Math.sin(a)*rr);}
 CTX.closePath(); CTX.fill();
 }
-CTX.restore(); CTX.shadowBlur=0;
+CTX.restore(); CTX.globalAlpha=1; CTX.shadowBlur=0;
 }
 
 function drawStoneCracks(A,B,C,D,wx,wy){
@@ -548,6 +548,7 @@ for(var i=0;i<n;i++){var a=(Math.PI*2/n)*i+Math.random()*0.4,spd=2+Math.random()
 }
 function floatText(sx,sy,txt,col){FLOATS.push({sx,sy,txt,col,life:75,maxLife:75,vy:-1.1});}
 function drawFX(){
+CTX.shadowBlur=0; CTX.shadowColor=“transparent”; CTX.globalAlpha=1;
 for(var i=PARTS.length-1;i>=0;i–){var p=PARTS[i];p.sx+=p.vx;p.sy+=p.vy;p.vx*=0.88;p.vy=p.vy*0.88+0.07;p.life–;if(p.life<=0){PARTS.splice(i,1);continue;}CTX.globalAlpha=p.life/p.maxLife;CTX.fillStyle=p.col;CTX.shadowColor=p.col;CTX.shadowBlur=4;CTX.beginPath();CTX.arc(p.sx,p.sy,p.r,0,Math.PI*2);CTX.fill();}
 for(var i=FLOATS.length-1;i>=0;i–){var f=FLOATS[i];f.sy+=f.vy;f.life–;if(f.life<=0){FLOATS.splice(i,1);continue;}CTX.globalAlpha=Math.min(1,f.life/22);CTX.fillStyle=f.col;CTX.shadowColor=f.col;CTX.shadowBlur=6;CTX.font=“bold 14px ‘Nunito’,sans-serif”;CTX.textAlign=“center”;CTX.fillText(f.txt,f.sx,f.sy);}
 CTX.globalAlpha=1;CTX.shadowBlur=0;CTX.textAlign=“left”;
@@ -668,36 +669,64 @@ CTX.shadowBlur=0;CTX.fillStyle=”#DC4080”;
 var fo=PL.onGround?Math.sin(PL.wf*0.9)*r*0.08:0;
 CTX.beginPath();CTX.ellipse(-r*0.36,r*0.8+fo,r*0.28,r*0.17,0.18,0,Math.PI*2);CTX.fill();
 CTX.beginPath();CTX.ellipse(r*0.36,r*0.8-fo,r*0.28,r*0.17,-0.18,0,Math.PI*2);CTX.fill();
-if(!PL.onGround&&PL.vz>0.05){CTX.fillStyle=”#FFE044”;CTX.globalAlpha=0.85;CTX.shadowColor=”#FFE044”;CTX.shadowBlur=8;for(var i=0;i<4;i++){var aa=tick*0.12+i*Math.PI/2;CTX.beginPath();CTX.arc(Math.cos(aa)*r*1.5,Math.sin(aa)*r*1.5,2.5,0,Math.PI*2);CTX.fill();}CTX.globalAlpha=1;CTX.shadowBlur=0;}
+if(!PL.onGround&&PL.vz>0.05){CTX.fillStyle=”#FFE044”;CTX.globalAlpha=0.85;CTX.shadowColor=”#FFE044”;CTX.shadowBlur=8;for(var i=0;i<4;i++){var aa=tick*0.12+i*Math.PI/2;CTX.beginPath();CTX.arc(Math.cos(aa)*r*1.5,Math.sin(aa)*r*1.5,2.5,0,Math.PI*2);CTX.fill();}}
 CTX.restore();
+CTX.globalAlpha=1;CTX.shadowBlur=0;CTX.shadowColor=‘transparent’;
 }
 
 // ── BACKGROUND ───────────────────────────────────────────────
 function drawBG(tick){
+// Always reset state first
+CTX.globalAlpha=1; CTX.shadowBlur=0; CTX.shadowColor=“transparent”;
+
 var prog=clamp(PL.x/183,0,1);
-var c1=lerpRGB([135,200,240],[60,40,120],prog);
-var c2=lerpRGB([200,160,220],[100,50,160],prog);
+// Sky: interpolate between day blue and night purple
+var r1=Math.round(lerp(135,60,prog)), g1=Math.round(lerp(200,40,prog)), b1=Math.round(lerp(240,120,prog));
+var r2=Math.round(lerp(200,100,prog)), g2=Math.round(lerp(160,50,prog)), b2=Math.round(lerp(220,160,prog));
 var sky=CTX.createLinearGradient(0,0,0,GC.height);
-sky.addColorStop(0,“rgb(”+c1+”)”); sky.addColorStop(1,“rgb(”+c2+”)”);
-CTX.fillStyle=sky; CTX.fillRect(0,0,GC.width,GC.height);
-if(prog>0.55){CTX.save();CTX.globalAlpha=(prog-0.55)*2.2;for(var i=0;i<35;i++){var bx=(i*173)%GC.width,by=(i*109)%(GC.height*0.55);CTX.fillStyle=“rgba(255,255,255,”+(0.4+Math.sin(tick*0.04+i)*0.3)+”)”;CTX.beginPath();CTX.arc(bx,by,1+(i%2),0,Math.PI*2);CTX.fill();}CTX.restore();}
-var sx=GC.width*0.78,sy=GC.height*0.12,sr=prog>0.6?24:20;
-var sc=prog>0.6?“rgba(200,200,255,0.35)”:“rgba(255,240,150,0.4)”;
-var sg=CTX.createRadialGradient(sx,sy,0,sx,sy,sr*6);sg.addColorStop(0,sc);sg.addColorStop(1,“transparent”);
-CTX.fillStyle=sg;CTX.fillRect(0,0,GC.width,GC.height);
-CTX.fillStyle=prog>0.6?”#D0D8FF”:”#FFFCE0”;CTX.shadowColor=CTX.fillStyle;CTX.shadowBlur=18;
-CTX.beginPath();CTX.arc(sx,sy,sr,0,Math.PI*2);CTX.fill();CTX.shadowBlur=0;
-for(var i=0;i<5;i++){
-var cx=((i*280+tick*0.3-CX*0.08)%(GC.width+350))-175;
-var cy=GC.height*(0.08+i*0.05),cr=30+i*14;
-CTX.save();CTX.globalAlpha=0.36+i*0.04;
-[[0,0,1],[-.5,-.35,.7],[.5,-.3,.65],[0,-.45,.6]].forEach(function(p){
-var px=cx+p[0]*cr,py=cy+p[1]*cr,pr=cr*p[2]*0.6;
-var cg=CTX.createRadialGradient(px,py,0,px,py,pr);cg.addColorStop(0,“rgba(255,255,255,0.95)”);cg.addColorStop(0.55,“rgba(240,248,255,0.75)”);cg.addColorStop(1,“transparent”);
-CTX.fillStyle=cg;CTX.beginPath();CTX.arc(px,py,pr,0,Math.PI*2);CTX.fill();
-});
+sky.addColorStop(0,“rgb(”+r1+”,”+g1+”,”+b1+”)”);
+sky.addColorStop(1,“rgb(”+r2+”,”+g2+”,”+b2+”)”);
+CTX.fillStyle=sky;
+CTX.fillRect(0,0,GC.width,GC.height);
+
+// Stars at night
+if(prog>0.55){
+CTX.save();
+CTX.globalAlpha=Math.min(1,(prog-0.55)*2.2);
+for(var i=0;i<30;i++){
+var bx=(i*173)%GC.width, by=(i*109)%(GC.height*0.5);
+CTX.fillStyle=“rgba(255,255,255,”+(0.4+Math.sin(tick*0.04+i)*0.25)+”)”;
+CTX.beginPath(); CTX.arc(bx,by,1+(i%2),0,Math.PI*2); CTX.fill();
+}
 CTX.restore();
 }
+
+// Sun (simple circle, no shadow)
+var sx=GC.width*0.78, sy=GC.height*0.12, sr=prog>0.6?22:18;
+CTX.save();
+CTX.globalAlpha=0.9;
+CTX.fillStyle=prog>0.6?”#D0D8FF”:”#FFFCE0”;
+CTX.beginPath(); CTX.arc(sx,sy,sr,0,Math.PI*2); CTX.fill();
+// glow ring
+CTX.globalAlpha=0.18;
+CTX.fillStyle=prog>0.6?”#8888FF”:”#FFEE88”;
+CTX.beginPath(); CTX.arc(sx,sy,sr*2.5,0,Math.PI*2); CTX.fill();
+CTX.restore();
+
+// BG clouds (simple, no radial gradients)
+CTX.save();
+for(var i=0;i<5;i++){
+var cx=((i*280+tick*0.3)%(GC.width+300))-150;
+var cy=GC.height*(0.08+i*0.05);
+var cr=28+i*12;
+CTX.globalAlpha=0.35+i*0.03;
+CTX.fillStyle=”#fff”;
+// 3 overlapping circles per cloud
+CTX.beginPath(); CTX.arc(cx,      cy,      cr,    0,Math.PI*2); CTX.fill();
+CTX.beginPath(); CTX.arc(cx-cr*0.6,cy+cr*0.2,cr*0.7,0,Math.PI*2); CTX.fill();
+CTX.beginPath(); CTX.arc(cx+cr*0.6,cy+cr*0.15,cr*0.65,0,Math.PI*2); CTX.fill();
+}
+CTX.restore();
 }
 
 var notifT=0;
@@ -708,6 +737,7 @@ var tick=0;
 function loop(){
 tick++;
 CTX.clearRect(0,0,GC.width,GC.height);
+CTX.globalAlpha=1; CTX.shadowBlur=0; CTX.shadowColor=“transparent”; CTX.textAlign=“left”;
 drawBG(tick);
 
 // Sort: draw boxes with highest (x+y) first (furthest in iso view)
@@ -729,10 +759,12 @@ ENEMIES.slice().sort(function(a,b){return(b.x+b.y)-(a.x+a.y);}).forEach(function
 drawPlayer(tick);
 drawFX();
 
-// Vignette
-var vg=CTX.createRadialGradient(GC.width*.5,GC.height*.5,GC.height*.2,GC.width*.5,GC.height*.5,GC.height*.88);
-vg.addColorStop(0,“transparent”);vg.addColorStop(1,“rgba(10,0,20,0.32)”);
+// Vignette - simple
+CTX.save(); CTX.globalAlpha=1; CTX.shadowBlur=0;
+var vg=CTX.createRadialGradient(GC.width*.5,GC.height*.5,GC.height*.25,GC.width*.5,GC.height*.5,GC.height*.85);
+vg.addColorStop(0,“rgba(0,0,0,0)”);vg.addColorStop(1,“rgba(10,0,20,0.28)”);
 CTX.fillStyle=vg;CTX.fillRect(0,0,GC.width,GC.height);
+CTX.restore();
 
 if(notifT>0){notifT–;document.getElementById(“notif”).style.opacity=(notifT<40?notifT/40:1).toFixed(2);}
 if(!PL.dead&&!PL.won){tick_player();tick_items();tick_enemies();tick_cps();tick_goal();tick_zone();}
