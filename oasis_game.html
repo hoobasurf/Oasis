@@ -751,265 +751,98 @@ window._FIRE_EXIT={x:exitX,y:FY+30,z:exitZ,r:40};
 window._FIRE_WORLD={FX:FX,FY:FY,FZ:FZ};
 })();
 
-// ════ DRAGON RÉALISTE — île 1 ════
+// ════ DRAGON — île 1 ════
 (function(){
 var DX=1360,DZ=-2240,DY=IY+20;
 var g=new THREE.Group();
+var mG=mc(0x1e7a18);var mD=mc(0x0d4a08);var mB=mc(0xd4a847);var mT=mc(0xf2edcc);var mFe=mce(0xff4400,0.9);
 
-// ── Palette réaliste
-var mScale  =mc(0x2d7a1e); // vert écaille sombre
-var mBelly  =mc(0xe8c87a); // beige doré ventre/intérieur gueule
-var mDark   =mc(0x1a4d10); // vert très foncé (contours, crêtes)
-var mTooth  =mc(0xf5f0d8); // ivoire dents
-var mEyeW   =mc(0xfff8e8); // blanc œil
-var mPupil  =mc(0x0a0a0a); // pupille noire
-var mIris   =mce(0xdd2200,0.85); // iris rouge-orangé
-var mClaw   =mc(0x4a3520); // griffes brunes
-var mHorn   =mc(0x2a3010); // cornes vert sombre presque noir
-var mFire   =mce(0xff6600,1.0); // naseaux feu
-
-// ══ CORPS principal — trapu et musclé
-var body=new THREE.Mesh(mkS(32,18,15),mScale);
-body.scale.set(1.8,1.0,1.3);addOutline(body,.052);g.add(body);
-// Ventre (plus clair, arrondi)
-var belly=new THREE.Mesh(mkS(28,16,13),mBelly);
-belly.scale.set(1.5,.45,1.05);belly.position.set(2,-12,0);g.add(belly);
-// Bosse musculaire dorsale
-var hump=new THREE.Mesh(mkS(20,12,11),mDark);
-hump.scale.set(1.0,.6,0.9);hump.position.set(-5,22,0);g.add(hump);
-
-// ══ COU — épais, musclé, légèrement courbé
-var neck=new THREE.Mesh(mkC(13,16,32,12),mScale);
-neck.rotation.z=-.5;neck.position.set(-32,20,0);addOutline(neck,.05);g.add(neck);
-// Dessous du cou (peau claire)
-var neckB=new THREE.Mesh(mkC(10,13,30,10),mBelly);
-neckB.rotation.z=-.5;neckB.position.set(-30,17,0);g.add(neckB);
-
-// ══ TÊTE — grande, trapue, style dragon réaliste
-var head=new THREE.Mesh(mkS(20,16,14),mScale);
-head.scale.set(1.4,1.1,1.15);head.position.set(-58,34,0);addOutline(head,.055);g.add(head);
-// Crâne bombé sombre
-var skull=new THREE.Mesh(mkS(18,14,12),mDark);
-skull.scale.set(1.2,.65,1.05);skull.position.set(-56,43,0);g.add(skull);
-// Joues (saillies latérales)
-var jowlL=new THREE.Mesh(mkS(12,10,10),mScale);jowlL.scale.set(.9,.7,.8);jowlL.position.set(-60,32,-14);addOutline(jowlL,.05);g.add(jowlL);
-var jowlR=new THREE.Mesh(mkS(12,10,10),mScale);jowlR.scale.set(.9,.7,.8);jowlR.position.set(-60,32,14);addOutline(jowlR,.05);g.add(jowlR);
-
-// ══ GUEULE RÉALISTE — mâchoire supérieure + inférieure distinctes
-// Mâchoire supérieure (museau)
-var snupG=new THREE.Group();
-var snupTop=new THREE.Mesh(mkS(20,10,12),mScale);snupTop.scale.set(1.6,.55,.9);snupTop.position.set(0,0,0);addOutline(snupTop,.05);snupG.add(snupTop);
-// Dessus museau (bosse)
-var snupBoss=new THREE.Mesh(mkS(16,8,10),mDark);snupBoss.scale.set(1.4,.38,.7);snupBoss.position.set(-2,3,0);snupG.add(snupBoss);
-// Lèvre supérieure
-var lipTop=new THREE.Mesh(mkS(18,6,11),mScale);lipTop.scale.set(1.5,.28,.85);lipTop.position.set(-1,-4,0);snupG.add(lipTop);
-// Naseaux (2) — brillants, chauds
-var nasL=new THREE.Mesh(mkS(3.5,8,7),mFire);nasL.scale.set(.8,1,1);nasL.position.set(-7,1,-6);snupG.add(nasL);
-var nasR=new THREE.Mesh(mkS(3.5,8,7),mFire);nasR.scale.set(.8,1,1);nasR.position.set(-7,1,6);snupG.add(nasR);
-var nasLg=new THREE.PointLight(0xff4400,3,60);nasLg.position.set(-8,2,-6);snupG.add(nasLg);
-// Dents supérieures (6 dents irrégulières)
-var toothData=[[-3,-6,-10],[-3,-5,-5],[-3,-5,0],[-3,-5,5],[-3,-5,10],[-3,-6,14]];
-toothData.forEach(function(td,ti){
-var tw=2+Math.abs(ti-2.5)*.3,th=5+Math.abs(ti-2.5)*1.5;
-var tooth=new THREE.Mesh(mkC(0,tw,th,5),mTooth);
-tooth.position.set(td[0],td[1],td[2]);tooth.rotation.z=.1*(ti-2.5);
-addOutline(tooth,.08);snupG.add(tooth);
-});
-snupG.position.set(-76,30,0);
-g.add(snupG);
-g.userData.snupG=snupG; // pour animation
-
-// Mâchoire inférieure
-var jawG=new THREE.Group();
-var jawBot=new THREE.Mesh(mkS(18,9,11),mScale);jawBot.scale.set(1.55,.45,.85);jawBot.position.set(0,0,0);addOutline(jawBot,.05);jawG.add(jawBot);
-// Intérieur gueule (luisant, chaud)
-var mouthIn=new THREE.Mesh(mkS(16,7,10),mBelly);mouthIn.scale.set(1.4,.32,.8);mouthIn.position.set(0,2,0);jawG.add(mouthIn);
-// Langue (rouge)
-var tongue=new THREE.Mesh(mkS(10,4,8),mce(0xcc2200,.9));tongue.scale.set(1.3,.25,.6);tongue.position.set(-1,3,0);jawG.add(tongue);
-// Dents inférieures (4 dents plus courtes)
-[[-7,-6],[-5,-2],[-5,2],[-7,6]].forEach(function(td){
-var dent=new THREE.Mesh(mkC(0,2,4,5),mTooth);dent.position.set(-2,4,td[1]);dent.rotation.z=3.14;addOutline(dent,.08);jawG.add(dent);
-});
-jawG.position.set(-76,22,0);
-jawG.userData.isJaw=true;
-g.add(jawG);
-g.userData.jawG=jawG; // animation respiration/rugissement
-
-// ══ YEUX RÉALISTES — sclère + iris + pupille + reflets
-function makeDragonEye(side){
+// Corps
+var body=new THREE.Mesh(mkS(28,16,14),mG);body.scale.set(1.9,1.0,1.35);addOutline(body,.05);g.add(body);
+var belly=new THREE.Mesh(mkS(24,14,12),mB);belly.scale.set(1.6,.38,1.1);belly.position.set(2,-13,0);g.add(belly);
+// Cou
+var neck=new THREE.Mesh(mkC(12,15,30,10),mG);neck.rotation.z=-.52;neck.position.set(-30,19,0);addOutline(neck,.045);g.add(neck);
+var neckB=new THREE.Mesh(mkC(9,12,28,8),mB);neckB.rotation.z=-.52;neckB.position.set(-28,16,0);g.add(neckB);
+// Tête
+var head=new THREE.Mesh(mkS(20,17,15),mG);head.scale.set(1.35,1.1,1.15);head.position.set(-58,35,0);addOutline(head,.05);g.add(head);
+var skull=new THREE.Mesh(mkS(17,13,13),mD);skull.scale.set(1.2,.6,1.0);skull.position.set(-56,44,0);g.add(skull);
+// Gueule
+var snout=new THREE.Mesh(mkS(18,9,11),mG);snout.scale.set(1.7,.48,.88);snout.position.set(-76,31,0);addOutline(snout,.045);g.add(snout);
+var jaw=new THREE.Mesh(mkS(16,8,10),mG);jaw.scale.set(1.65,.38,.82);jaw.position.set(-76,23,0);g.add(jaw);
+var mouthIn=new THREE.Mesh(mkS(14,7,9),mB);mouthIn.scale.set(1.5,.26,.75);mouthIn.position.set(-76,26,0);g.add(mouthIn);
+// Dents (simples cônes)
+var dentData=[[-72,-5,-8],[-72,-5,-2],[-72,-5,4],[-72,-5,10]];
+dentData.forEach(function(d){var t=new THREE.Mesh(mkC(0,2,6,5),mT);t.position.set(d[0],d[1],d[2]);t.rotation.z=.15;g.add(t);});
+// Naseaux
+var nasL=new THREE.Mesh(mkS(3,6,6),mFe);nasL.position.set(-82,31,-5);g.add(nasL);
+var nasR=new THREE.Mesh(mkS(3,6,6),mFe);nasR.position.set(-82,31,5);g.add(nasR);
+// Yeux
+function mkEye(sz){
 var eg=new THREE.Group();
-// Orbite (creux)
-var orb=new THREE.Mesh(mkS(9,14,12),mDark);orb.scale.set(1,1.1,.7);eg.add(orb);
-// Sclère (blanc jauni)
-var scl=new THREE.Mesh(mkS(8,13,11),mEyeW);scl.scale.set(.9,1.05,.6);scl.position.set(-.3,0,0);eg.add(scl);
-// Iris (rouge orangé vif avec lueur)
-var iris=new THREE.Mesh(mkS(6,11,10),mIris);iris.scale.set(.7,1.0,.55);iris.position.set(-.7,0,0);eg.add(iris);
-// Pupille verticale (fendue — typique dragon reptile)
-var pupil=new THREE.Mesh(mkS(2.5,10,3),mPupil);pupil.scale.set(.4,1.2,.35);pupil.position.set(-1.2,0,0);eg.add(pupil);
-// Reflet (2 petits points)
-var ref1=new THREE.Mesh(mkS(1.5,4,3),mc(0xffffff));ref1.position.set(-1.5,2.5,-1);eg.add(ref1);
-var ref2=new THREE.Mesh(mkS(.8,3,2),mc(0xffffff));ref2.position.set(-1.5,-2,1.5);eg.add(ref2);
-// Paupière supérieure (rend le regard plus féroce)
-var lid=new THREE.Mesh(mkS(9,6,11),mDark);lid.scale.set(.9,.35,.7);lid.position.set(0,5,0);lid.rotation.x=.2;eg.add(lid);
-eg.position.set(-60,39,side*12);
-eg.rotation.y=side*.18;
-return eg;
+var white=new THREE.Mesh(mkS(7,12,11),mc(0xfff8e0));white.scale.set(.9,1.1,.6);eg.add(white);
+var iris=new THREE.Mesh(mkS(5.5,10,9),mFe);iris.scale.set(.75,1.05,.52);iris.position.set(-.5,0,0);eg.add(iris);
+var pupil=new THREE.Mesh(mkS(2,9,2.5),mc(0x050505));pupil.scale.set(.4,1.3,.3);pupil.position.set(-1.2,0,0);eg.add(pupil);
+var shine=new THREE.Mesh(mkS(1.5,4,3),mc(0xffffff));shine.position.set(-1.5,2,-1);eg.add(shine);
+var lid=new THREE.Mesh(mkS(7.5,5,10),mD);lid.scale.set(.9,.3,.65);lid.position.set(0,5.5,0);eg.add(lid);
+eg.position.set(-60,40,sz*12);eg.rotation.y=sz*.18;return eg;
 }
-g.add(makeDragonEye(-1));
-g.add(makeDragonEye(1));
-
-// ══ CORNES — 2 grandes + 2 petites, style cerf
-var hornData=[[0,0],[side=-1,1],[1,-1],[-1,-1]];
-function makeHorn(ofx,ofz,len,baseR){
-var h=new THREE.Mesh(mkC(0,baseR,len,7),mHorn);addOutline(h,.07);return h;
-}
-var hornBL=makeHorn(0,0,22,3.5);hornBL.position.set(-50,52,-9);hornBL.rotation.z=-.25;hornBL.rotation.x=.3;g.add(hornBL);
-var hornBR=makeHorn(0,0,22,3.5);hornBR.position.set(-50,52,9);hornBR.rotation.z=-.25;hornBR.rotation.x=-.3;g.add(hornBR);
-var hornSL=makeHorn(0,0,12,2.2);hornSL.position.set(-46,49,-16);hornSL.rotation.z=-.1;hornSL.rotation.x=.5;g.add(hornSL);
-var hornSR=makeHorn(0,0,12,2.2);hornSR.position.set(-46,49,16);hornSR.rotation.z=-.1;hornSR.rotation.x=-.5;g.add(hornSR);
-
-// ══ CRÊTES DORSALES — épines osseuses asymétriques
-var creteData=[[0,38,0,16,2.8],[9,36,0,13,2.4],[18,34,0,11,2.1],[27,33,0,9,1.8],[36,31,0,7,1.5],[44,29,0,6,1.3]];
-creteData.forEach(function(cd,ci){
-var spine=new THREE.Mesh(mkC(0,cd[4],cd[3],6),mDark);
-spine.position.set(cd[0]-30,cd[1],cd[2]);spine.rotation.z=-.1+ci*.05;
-addOutline(spine,.07);g.add(spine);
-// Mini-épine latérale (réalisme)
-if(ci%2===0){
-var spineS=new THREE.Mesh(mkC(0,1.5,cd[3]*.6,5),mHorn);
-spineS.position.set(cd[0]-30,cd[1]-1,-8);spineS.rotation.z=-.1;spineS.rotation.x=.5;g.add(spineS);
-var spineS2=spineS.clone();spineS2.position.z=8;spineS2.rotation.x=-.5;g.add(spineS2);
-}
-});
-
-// ══ AILES — grandes ailes de chauve-souris réalistes
-function makeDragonWing(side){
+g.add(mkEye(-1));g.add(mkEye(1));
+// Cornes
+var hornL=new THREE.Mesh(mkC(0,3.5,22,6),mD);hornL.position.set(-50,53,-10);hornL.rotation.z=-.28;hornL.rotation.x=.32;addOutline(hornL,.07);g.add(hornL);
+var hornR=new THREE.Mesh(mkC(0,3.5,22,6),mD);hornR.position.set(-50,53,10);hornR.rotation.z=-.28;hornR.rotation.x=-.32;addOutline(hornR,.07);g.add(hornR);
+// Cretes dorsales
+for(var si=0;si<5;si++){var sp=new THREE.Mesh(mkC(0,3.5-si*.3,15-si*.8,6),mD);sp.position.set(-22+si*12,36-si*.5,0);sp.rotation.z=-.12+si*.05;addOutline(sp,.06);g.add(sp);}
+// Ailes
+function mkWing(s){
 var wg=new THREE.Group();
-var matMem=new THREE.MeshToonMaterial({color:0x1a5c10,side:THREE.DoubleSide,gradientMap:gradTex,transparent:true,opacity:.88});
-var matVein=new THREE.MeshToonMaterial({color:0x0d3308,side:THREE.DoubleSide,gradientMap:gradTex});
-var s=side; // -1 gauche, +1 droite
-
-// Os humérus (épaule → coude)
-var hum=new THREE.Mesh(mkC(4,5,42,8),mDark);hum.position.set(0,0,0);hum.rotation.z=s*.65;addOutline(hum,.055);wg.add(hum);
-// Os avant-bras (coude → poignet)
-var fore=new THREE.Mesh(mkC(3,3.5,36,7),mDark);fore.position.set(s*28,-18,0);fore.rotation.z=s*.3;addOutline(fore,.05);wg.add(fore);
-// Doigts osseux (3 doigts qui soutiennent la membrane)
-var fingerPos=[[s*48,-26,s*8],[s*48,-26,0],[s*48,-26,s*-8]];
-var fingerDir=[[s*.2,.8,0],[s*.3,.7,0],[s*.1,.6,s*-.15]];
-var fingerLen=[38,48,42];
-fingerPos.forEach(function(fp,fi){
-var fing=new THREE.Mesh(mkC(0,2,fingerLen[fi],5),mDark);
-fing.position.set(fp[0],fp[1],fp[2]);
-fing.rotation.z=fingerDir[fi][0];fing.rotation.x=fingerDir[fi][2];
-addOutline(fing,.055);wg.add(fing);
-});
-
-// Membrane principale (grand triangle avec courbure)
-function addMem(pts, mat){
+var arm=new THREE.Mesh(mkC(4,5,50,8),mD);arm.rotation.z=s*.62;addOutline(arm,.05);wg.add(arm);
+var fore=new THREE.Mesh(mkC(2.5,3.5,38,7),mD);fore.position.set(s*32,-20,0);fore.rotation.z=s*.28;wg.add(fore);
 var geo=new THREE.BufferGeometry();
-var verts=new Float32Array(pts);geo.setAttribute(‘position’,new THREE.BufferAttribute(verts,3));
-geo.computeVertexNormals();
-return new THREE.Mesh(geo,mat);
-}
 var sx=s;
-// Membrane zone 1 (entre humérus et doigt 1)
-var m1=addMem([0,0,0, sx*42,-30,sx*15, sx*52,-60,sx*18, 0,0,0, sx*52,-60,sx*18, sx*56,-78,sx*20],matMem);wg.add(m1);
-// Membrane zone 2 (entre doigts)
-var m2=addMem([sx*42,-30,0, sx*52,-60,sx*8, sx*56,-80,sx*5, sx*42,-30,sx*-10, sx*52,-60,sx*-15, sx*50,-82,sx*-18],matMem);wg.add(m2);
-// Membrane bord d’attaque (plus sombre)
-var m3=addMem([0,4,0, sx*42,-26,sx*14, sx*48,-54,sx*16, 0,0,0, sx*48,-54,sx*16, sx*50,-75,sx*18],matVein);wg.add(m3);
-// Veine centrale
-var vein=new THREE.Mesh(mkC(0,1.5,55,5),matVein);vein.position.set(sx*20,-14,sx*6);vein.rotation.z=s*.9;vein.rotation.x=s*.15;wg.add(vein);
-
-wg.position.set(12,24,s*14);
-return wg;
+var v=new Float32Array([
+0,0,0,   sx*30,-18,sx*10,  sx*46,-42,sx*18,
+0,0,0,   sx*46,-42,sx*18,  sx*50,-72,sx*22,
+sx*30,-18,sx*10, sx*50,-45,0, sx*46,-42,sx*18,
+sx*50,-45,0, sx*50,-72,sx*8, sx*46,-42,sx*18,
+sx*50,-45,0, sx*50,-72,sx*-12, sx*50,-72,sx*8
+]);
+geo.setAttribute(‘position’,new THREE.BufferAttribute(v,3));geo.computeVertexNormals();
+var mem=new THREE.Mesh(geo,new THREE.MeshToonMaterial({color:0x0a4408,side:THREE.DoubleSide,gradientMap:gradTex,transparent:true,opacity:.9}));
+wg.add(mem);wg.position.set(14,22,s*12);return wg;
 }
-var wingL=makeDragonWing(-1);g.add(wingL);g.userData.wingL=wingL;
-var wingR=makeDragonWing(1);g.add(wingR);g.userData.wingR=wingR;
-
-// ══ PATTES — avant et arrière, avec cuisse + genou + pied griffu
-function makeDragonLeg(side,isFront){
+var wingL=mkWing(-1);g.add(wingL);g.userData.wingL=wingL;
+var wingR=mkWing(1);g.add(wingR);g.userData.wingR=wingR;
+// Pattes
+function mkLeg(s,front){
 var lg=new THREE.Group();
-var s=side;
-// Cuisse musclée
-var thigh=new THREE.Mesh(mkS(10,14,10),mScale);thigh.scale.set(1.1,1.0,.9);
-thigh.position.set(0,0,0);addOutline(thigh,.05);lg.add(thigh);
-// Tibia
-var shin=new THREE.Mesh(mkC(5,7,18,8),mScale);
-shin.position.set(s*(isFront?-4:4),-16,0);shin.rotation.z=isFront?.5:-.5;
-addOutline(shin,.05);lg.add(shin);
-// Pied / tarse
-var foot=new THREE.Mesh(mkS(9,7,8),mDark);foot.scale.set(1.2,.5,.9);
-foot.position.set(s*(isFront?-10:10),-28,0);addOutline(foot,.05);lg.add(foot);
-// 4 griffes réalistes (courbées)
-for(var ci=0;ci<4;ci++){
-var cz=(ci-1.5)*6;
-var clawG=new THREE.Group();
-// Phalange
-var phal=new THREE.Mesh(mkC(2,1,8,5),mScale);phal.rotation.z=.3;addOutline(phal,.06);clawG.add(phal);
-// Griffe courbe
-var claw=new THREE.Mesh(mkC(0,1.8,9,5),mClaw);claw.position.set(s*(isFront?-3:3),-7,0);claw.rotation.z=isFront?(-.7):.7;addOutline(claw,.07);clawG.add(claw);
-clawG.position.set(s*(isFront?-12:12),-30,cz);lg.add(clawG);
-}
+var thigh=new THREE.Mesh(mkC(6,8,20,8),mG);thigh.rotation.z=front?.4:-.3;addOutline(thigh,.045);lg.add(thigh);
+var shin=new THREE.Mesh(mkC(4,6,16,7),mG);shin.position.set(0,-18,0);shin.rotation.z=front?-.5:.4;lg.add(shin);
+for(var ci=0;ci<3;ci++){var claw=new THREE.Mesh(mkC(0,2,9,5),mT);claw.position.set(front?-4:4,-30,(ci-1)*7);claw.rotation.z=front?-.65:.65;lg.add(claw);}
 return lg;
 }
-// Patte AV gauche
-var legFL=makeDragonLeg(-1,true);legFL.position.set(-22,-18,-20);g.add(legFL);
-// Patte AV droite
-var legFR=makeDragonLeg(1,true);legFR.position.set(-22,-18,20);g.add(legFR);
-// Patte AR gauche
-var legBL=makeDragonLeg(-1,false);legBL.position.set(24,-20,-20);g.add(legBL);
-// Patte AR droite
-var legBR=makeDragonLeg(1,false);legBR.position.set(24,-20,20);g.add(legBR);
+var lFL=mkLeg(-1,true);lFL.position.set(-22,-18,-18);g.add(lFL);
+var lFR=mkLeg(1,true);lFR.position.set(-22,-18,18);g.add(lFR);
+var lBL=mkLeg(-1,false);lBL.position.set(24,-20,-18);g.add(lBL);
+var lBR=mkLeg(1,false);lBR.position.set(24,-20,18);g.add(lBR);
+// Queue
+for(var qi=0;qi<6;qi++){var qr=8-qi*.9;var qs=new THREE.Mesh(mkC(qr*.85,qr,16,8),mG);qs.position.set(30+qi*14,-4-qi*2.5,Math.sin(qi*.8)*qi*2.2);qs.rotation.z=Math.PI/2;g.add(qs);}
+var qtip=new THREE.Mesh(mkS(9,6,14),mD);qtip.scale.set(1.0,.5,1.3);qtip.position.set(118,-20,0);addOutline(qtip,.06);g.add(qtip);
+// Selle
+var saddle=new THREE.Mesh(mkS(20,9,15),mc(0x7a4520));saddle.scale.set(1.5,.52,1.2);saddle.position.set(-2,31,0);addOutline(saddle,.07);g.add(saddle);
+var pommel=new THREE.Mesh(mkS(6,8,6),mc(0xcc8822));pommel.position.set(-13,38,0);addOutline(pommel,.07);g.add(pommel);
+// Lumieres
+var drL=new THREE.PointLight(0xff5500,3,180);drL.position.set(0,28,0);g.add(drL);
 
-// ══ QUEUE — longue, segmentée, avec pointe en losange
-var qSegCount=9;
-for(var qi=0;qi<qSegCount;qi++){
-var qp=(qi+1)/qSegCount;
-var qr=8-qi*.65;
-var qseg=new THREE.Mesh(mkC(qr*.85,qr,14,8),mScale);
-var qa=Math.sin(qi*.7)*.18;
-qseg.position.set(28+qi*13,-4-qi*2.2,Math.sin(qi*.9)*qi*1.5);
-qseg.rotation.z=Math.PI*.5+qa;addOutline(qseg,.04);g.add(qseg);
-// Écaille sous la queue (peau claire)
-if(qi<7){
-var qbelly=new THREE.Mesh(mkS(qr*.8,7,qr*.6),mBelly);qbelly.scale.set(1,.15,.8);
-qbelly.position.set(28+qi*13,-10-qi*2,Math.sin(qi*.9)*qi*1.5);g.add(qbelly);
-}
-}
-// Pointe losange
-var tip=new THREE.Mesh(mkS(8,6,12),mDark);tip.scale.set(1,.5,1.2);tip.position.set(152,-24,0);
-addOutline(tip,.07);g.add(tip);
-
-// ══ SELLE — réaliste, avec étriers et sangles
-var saddleBase=new THREE.Mesh(mkS(22,10,16),mc(0x8b5a2b));saddleBase.scale.set(1.5,.55,1.2);saddleBase.position.set(-2,30,0);addOutline(saddleBase,.07);g.add(saddleBase);
-var saddlePad=new THREE.Mesh(mkS(18,9,14),mc(0x5c3418));saddlePad.scale.set(1.4,.42,1.1);saddlePad.position.set(-2,33,0);g.add(saddlePad);
-// Pommeau avant
-var pommel=new THREE.Mesh(mkS(7,8,6),mc(0xddaa33));pommel.position.set(-14,38,0);addOutline(pommel,.07);g.add(pommel);
-// Arçon arrière
-var cantle=new THREE.Mesh(mkS(6,7,6),mc(0xddaa33));cantle.position.set(10,38,0);addOutline(cantle,.07);g.add(cantle);
-// Ornements dorés brillants
-[[-14,40,0],[10,40,0]].forEach(function(op,i){
-var orn=new THREE.Mesh(mkS(3,5,4),mce(0xffcc00,1.2));orn.position.set(op[0],op[1],op[2]);
-orn.userData.tonGlow=true;orn.userData.ph=i*.8;ANIM_GLOWS.push(orn);g.add(orn);
-});
-
-// ── Lumières
-var drLight=new THREE.PointLight(0xff6600,4,220);drLight.position.set(0,30,0);g.add(drLight);
-var drEyeL=new THREE.PointLight(0xff2200,2,80);drEyeL.position.set(-62,39,-14);g.add(drEyeL);
-var drEyeR=new THREE.PointLight(0xff2200,2,80);drEyeR.position.set(-62,39,14);g.add(drEyeR);
-
-// ── Position
 g.position.set(DX,DY,DZ);
 g.userData.baseX=DX;g.userData.baseY=DY;g.userData.baseZ=DZ;
 g.userData.ph=0;g.userData.riding=false;g.userData.returning=false;g.userData.dropTimer=0;
 scene.add(g);DRAGON=g;
 
-// ── Balise dorée
+// Balise
 var bPole=new THREE.Mesh(mkC(3,3,100,8),mce(0xffaa00,.75));bPole.position.set(DX,IY+60,DZ);scene.add(bPole);
 var bBall=new THREE.Mesh(mkS(16,10,8),mce(0xffcc00,1.3));bBall.position.set(DX,IY+112,DZ);scene.add(bBall);
 bBall.userData.tonGlow=true;bBall.userData.ph=0.5;ANIM_GLOWS.push(bBall);
-var bL=new THREE.PointLight(0xffaa00,7,450);bL.position.set(DX,IY+110,DZ);scene.add(bL);
+var bL2=new THREE.PointLight(0xffaa00,7,450);bL2.position.set(DX,IY+110,DZ);scene.add(bL2);
 for(var fi=0;fi<4;fi++){
 var fa2=fi/4*Math.PI*2;
 var fp2=new THREE.Mesh(mkC(1.2,1.2,30,6),mc(0xcc7700));fp2.position.set(DX+Math.cos(fa2)*40,IY+18,DZ+Math.sin(fa2)*40);scene.add(fp2);
