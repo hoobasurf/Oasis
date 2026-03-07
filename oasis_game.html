@@ -144,7 +144,7 @@ function _initAC(){
   try{
     _AC=new(window.AudioContext||window.webkitAudioContext)();
     // Master chain: LPF → Reverb mix → Master gain → destination
-    _MASTER=_AC.createGain();_MASTER.gain.value=0.42;_MASTER.connect(_AC.destination);
+    _MASTER=_AC.createGain();_MASTER.gain.value=0.58;_MASTER.connect(_AC.destination);
     // Filtre passe-bas global (adoucit les aigus agressifs)
     _LPF=_AC.createBiquadFilter();_LPF.type='lowpass';_LPF.frequency.value=3200;_LPF.Q.value=0.5;
     _LPF.connect(_MASTER);
@@ -174,7 +174,7 @@ function _startAudio(){_initAC();_resumeAC();}
 document.getElementById('mute-btn').addEventListener('click',function(){
   _startAudio();
   _MUTED=!_MUTED;
-  if(_MASTER)_MASTER.gain.value=_MUTED?0:0.42;
+  if(_MASTER)_MASTER.gain.value=_MUTED?0:0.58;
   this.textContent=_MUTED?'🔇 Muet':'🔊 Son';
   if(!_MUTED&&_CUR_BGM>=0){var bi=_CUR_BGM;_CUR_BGM=-1;startBGM(bi);}
 });
@@ -539,7 +539,7 @@ function playSound(type){
   _resumeAC();
   var now=_AC.currentTime;
   function sfx(notes){// [[midi,dur,delay],...]
-    notes.forEach(function(n){_note(_mf(n[0]),n[1],'t',0.28,now+(n[2]||0),_LPF);});
+    notes.forEach(function(n){_note(_mf(n[0]),n[1],'t',0.06,now+(n[2]||0),_LPF);});
   }
   switch(type){
     case'jump':      sfx([[72,.07,0],[76,.09,.07],[79,.11,.14]]);break;
@@ -695,6 +695,7 @@ function takeDamage(source){
   _INVINCIBLE=150;
   updateLivesHUD();
   playSound('hit');
+  if(navigator.vibrate)navigator.vibrate([80,20,80,20,80]);
   if(_dmgFlash){_dmgFlash.className='hit';setTimeout(function(){_dmgFlash.className='';},220);}
   // Respawn immédiat sur dernière position sûre du monde actuel
   P.x=_RESPAWN.x;P.y=_RESPAWN.y+30;P.z=_RESPAWN.z;
@@ -1615,15 +1616,17 @@ function physicsStep(dt){
       if(mbdx*mbdx+mbdz*mbdz<32*32){
         window._MAGIC_BOX.opened=true;
         var beanEl=document.getElementById('bean-overlay'),beanTx=document.getElementById('bean-text');
-        if(beanEl)beanEl.style.opacity=1;if(beanTx){beanTx.style.opacity=1;beanTx.textContent='🌱 Un haricot magique !\nIl pousse vers le ciel…';}
-        setTimeout(function(){if(beanTx)beanTx.textContent='☁️ Un monde dans les nuages !';},1500);
-        setTimeout(function(){
-          window._IN_FIRE_WORLD=false;OCEAN_MODE=false;window._IN_CLOUD_WORLD=true;
-          var CW=window._CLOUD_WORLD;P.x=CW.CX;P.y=CW.CY+80;P.z=CW.CZ;P.vx=0;P.vy=8;P.vz=0;P.flying=true;
-          if(beanEl)setTimeout(function(){beanEl.style.opacity=0;},800);
-          if(beanTx)setTimeout(function(){beanTx.style.opacity=0;},800);
-          popupEl.textContent='☁️ Monde Céleste !';popupEl.className='show';popTimer=5;
-        },3200);
+        if(beanEl)beanEl.style.opacity=1;if(beanTx){beanTx.style.opacity=1;beanTx.textContent='🌱 Un haricot magique ! Il pousse vers le ciel…';}
+        // Afficher bouton grimpe
+        window._BEAN_CLIMBING=true;window._BEAN_PROGRESS=0;window._BEAN_DONE=false;
+        var beanUpBtn=document.getElementById('btnA');
+        if(beanUpBtn){beanUpBtn.innerHTML='<span>⬆️</span>';beanUpBtn.style.background='radial-gradient(circle at 38% 34%,#aaffcc,#00cc66)';}
+        setTimeout(function(){if(beanTx)beanTx.textContent='⬆️ Appuie pour grimper !';},800);
+        setTimeout(function(){if(beanTx)beanTx.textContent='☁️ Un monde dans les nuages !';},2200);
+        // Fin automatique après 5s si pas de grimpe suffisante
+        window._BEAN_TIMER=setTimeout(function(){
+          _doBeanFinish(beanEl,beanTx);
+        },5000);
       } else {
         diveHintEl.style.display='block';diveHintEl.textContent='📦 Boîte Magique ! Avance pour ouvrir !';
       }
@@ -1672,11 +1675,12 @@ document.addEventListener('keydown',function(e){
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code)>=0)e.preventDefault();
   _startAudioAndBGM();
   if(e.code==='Space'){
+    if(window._BEAN_CLIMBING){window._BEAN_PROGRESS=(window._BEAN_PROGRESS||0)+18;if(window._BEAN_PROGRESS>=100){clearTimeout(window._BEAN_TIMER);var be=document.getElementById('bean-overlay'),bt=document.getElementById('bean-text');_doBeanFinish(be,bt);}else{popupEl.textContent='⬆️ '+(window._BEAN_PROGRESS|0)+'% !';popupEl.className='show';popTimer=.5;}return;}
     if(P.inSub){P.inSub=false;PG.visible=true;P.x=SB.x;P.y=SB.y+30;P.z=SB.z;P.vy=2.5;popupEl.textContent='🚪 Sortie sous-marin';popupEl.className='show';popTimer=1.5;}
     else if(P.underwater||P.swimMode){P.vy=Math.min(P.vy+2.2,8);playSound('bubble');}
     else if(P.onGround){P.vy=12;P.onGround=false;P.flying=false;playSound('jump');}
-    else if(!P.flying){P.flying=true;P.vy=Math.min(P.vy+3.0,8);playSound('fly');}
-    else{P.vy=Math.min(P.vy+2.2,8);playSound('fly');}
+    else if(!P.flying){P.flying=true;P.vy=Math.min(P.vy+3.0,8);if(navigator.vibrate)navigator.vibrate([30,10,30]);}
+    else{P.vy=Math.min(P.vy+2.2,8);if(navigator.vibrate)navigator.vibrate([15]);}
     // Sortie lave via plateforme de sortie
     if(window._IN_FIRE_WORLD&&window._LAVA_EXIT){
       var lex=P.x-window._LAVA_EXIT.x,lez=P.z-window._LAVA_EXIT.z;
@@ -1728,7 +1732,7 @@ mkJoy('jL','jLk',function(v){jLX=v;},function(v){jLY=v;});
 mkJoy('jR','jRk',function(v){jRX=v;},function(v){jRY=v;});
 
 var btnA=document.getElementById('btnA');
-if(btnA)btnA.addEventListener('touchstart',function(e){e.preventDefault();_startAudio();if(P.inSub){P.inSub=false;PG.visible=true;P.x=SB.x;P.y=SB.y+30;P.z=SB.z;P.vy=2.5;}else if(P.underwater||P.swimMode){P.vy=Math.min(P.vy+2.2,8);playSound('bubble');}else if(P.onGround){P.vy=12;P.onGround=false;P.flying=false;playSound('jump');}else if(!P.flying){P.flying=true;P.vy=Math.min(P.vy+3,8);playSound('fly');}else{P.vy=Math.min(P.vy+2.2,8);playSound('fly');}},{passive:false});
+if(btnA)btnA.addEventListener('touchstart',function(e){e.preventDefault();_startAudio();if(window._BEAN_CLIMBING){window._BEAN_PROGRESS=(window._BEAN_PROGRESS||0)+18;if(window._BEAN_PROGRESS>=100){clearTimeout(window._BEAN_TIMER);var be=document.getElementById('bean-overlay'),bt=document.getElementById('bean-text');_doBeanFinish(be,bt);}else{popupEl.textContent='⬆️ '+(window._BEAN_PROGRESS|0)+'% !';popupEl.className='show';popTimer=.5;}return;}if(P.inSub){P.inSub=false;PG.visible=true;P.x=SB.x;P.y=SB.y+30;P.z=SB.z;P.vy=2.5;}else if(P.underwater||P.swimMode){P.vy=Math.min(P.vy+2.2,8);playSound('bubble');}else if(P.onGround){P.vy=12;P.onGround=false;P.flying=false;playSound('jump');}else if(!P.flying){P.flying=true;P.vy=Math.min(P.vy+3,8);if(navigator.vibrate)navigator.vibrate([30,10,30]);}else{P.vy=Math.min(P.vy+2.2,8);if(navigator.vibrate)navigator.vibrate([15]);}},{passive:false});
 var btnB=document.getElementById('btnB');
 if(btnB)btnB.addEventListener('touchstart',function(e){e.preventDefault();_startAudio();if(P.inSub){SUB_LIGHTS_ON=!SUB_LIGHTS_ON;}else if(SUB_NEAR){openQuiz(function(){P.inSub=true;PG.visible=false;SUB_LIGHTS_ON=true;SB.x=SUB_GRP.position.x;SB.y=SUB_GRP.position.y;SB.z=SUB_GRP.position.z;SB.vx=SB.vy=SB.vz=0;SB.yaw=0;popupEl.textContent='🚢 Sous-marin !';popupEl.className='show';popTimer=3;playSound('sub_enter');});}},{passive:false});
 var btnSubUp=false,btnSubDn=false;
@@ -1938,6 +1942,10 @@ function animate(){
   if(KY['KeyW']||KY['KeyZ']||KY['ArrowUp'])fwd+=1;if(KY['KeyS']||KY['ArrowDown'])fwd-=1;
   if(KY['KeyD']||KY['ArrowRight'])lat+=1;if(KY['KeyA']||KY['KeyQ']||KY['ArrowLeft'])lat-=1;
   fwd-=jLY;lat+=jLX;
+  // Swipe to move
+  if(window._SWIPE_MOVE&&window._SWIPE_MOVE.active&&!P.inSub){
+    fwd-=window._SWIPE_MOVE.vz;lat+=window._SWIPE_MOVE.vx;
+  }
 
   var btnUpEl=document.getElementById('btnUp'),btnDnEl=document.getElementById('btnDn');
   if(btnUpEl)btnUpEl.style.display=P.inSub?'flex':'none';
@@ -2013,13 +2021,8 @@ function animate(){
         // Fin : activation monde lave
         dg.riding=false;dg.returning=true;dg.dropTimer=0;DRAGON_RIDING=false;DRAGON.rotation.z=0;
         window._KIRBY_DROPPED=false;
-        window._IN_FIRE_WORLD=true;
-        P.x=window._VOLCANO.x;P.z=window._VOLCANO.z;
-        P.y=(window._FIRE_WORLD?window._FIRE_WORLD.FY:-480)+380;
-        P.vy=-4;P.vx=0;P.vz=0;P.flying=false;P.onGround=false;
-        popupEl.textContent='🌋 Monde Souterrain de Lave !';popupEl.className='show';popTimer=5;
-        zoneAnnEl.textContent='🔥 Gouffre de Lave !';zoneAnnEl.className='show';zoneAnnTimer=5;
         playSound('lava_enter');
+        _gotoVolcanoWorld();
       }
     } else if(dg.returning){
       DRAGON.position.x+=(dg.baseX-DRAGON.position.x)*.02;DRAGON.position.y+=(dg.baseY+80-DRAGON.position.y)*.02;DRAGON.position.z+=(dg.baseZ-DRAGON.position.z)*.02;
@@ -2060,9 +2063,8 @@ function animate(){
   if(window._VOLCANO&&OCEAN_MODE&&!P.inSub&&!DRAGON_RIDING&&!window._IN_FIRE_WORLD){
     var vdx=P.x-window._VOLCANO.x,vdz=P.z-window._VOLCANO.z;
     if(vdx*vdx+vdz*vdz<window._VOLCANO.r*window._VOLCANO.r&&P.y<window._VOLCANO.y+20&&P.vy<-.5){
-      window._IN_FIRE_WORLD=true;P.x=window._VOLCANO.x;P.z=window._VOLCANO.z;
-      P.y=(window._FIRE_WORLD?window._FIRE_WORLD.FY:-480)+340;P.vx=0;P.vy=-4;P.vz=0;
       playSound('lava_enter');
+      _gotoVolcanoWorld();
     }
   }
 
@@ -2274,6 +2276,78 @@ renderer.domElement.addEventListener('touchend',function(e){
     _tapIndicator.scale.setScalar(1);
   }
 },{passive:true});
+
+function _gotoVolcanoWorld(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0200;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center';
+  ov.innerHTML='<div style="font-family:Fredoka One,cursive;font-size:32px;color:#ff6622;text-shadow:0 0 20px #ff2200;margin-bottom:20px;text-align:center">🌋 Grotte du Volcan</div><div style="width:260px;height:14px;border-radius:8px;background:rgba(255,50,0,.15);border:2px solid rgba(255,100,50,.5);overflow:hidden"><div id="_vbar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#ff2200,#ff8800,#ffcc00);transition:width .1s ease"></div></div><div style="font-family:Fredoka One,cursive;font-size:14px;color:#ff8844;margin-top:12px">Kirby plonge dans le cratère !</div>';
+  document.body.appendChild(ov);
+  var pct=0;var iv=setInterval(function(){pct=Math.min(100,pct+3.5);document.getElementById('_vbar').style.width=pct+'%';if(pct>=100){clearInterval(iv);setTimeout(function(){window.location.href='volcano_world.html';},200);}},50);
+}
+
+// ══════════════════════════════════════════════════════
+// SWIPE TO MOVE — glisser le doigt sur l'écran dirige Kirby
+// ══════════════════════════════════════════════════════
+(function(){
+  var _swipeActive=false,_swipeSX=0,_swipeSY=0,_swipeTid=-1;
+  var _swipeVX=0,_swipeVZ=0,_swipeAcc=0;
+  window._SWIPE_MOVE={vx:0,vz:0,active:false};
+
+  renderer.domElement.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1)return;
+    var t=e.touches[0];
+    if(isTapOnUI(t.target))return;
+    _swipeSX=t.clientX;_swipeSY=t.clientY;_swipeTid=t.identifier;_swipeActive=false;
+  },{passive:true});
+
+  renderer.domElement.addEventListener('touchmove',function(e){
+    for(var i=0;i<e.changedTouches.length;i++){
+      var t=e.changedTouches[i];
+      if(t.identifier!==_swipeTid)continue;
+      var dx=t.clientX-_swipeSX,dy=t.clientY-_swipeSY;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<12){window._SWIPE_MOVE.active=false;return;}
+      _swipeActive=true;
+      // Convertir direction écran → direction monde (en tenant compte de la caméra)
+      var norm=Math.min(dist/55,1); // 0-1 selon intensité du glissement
+      var screenDX=dx/dist,screenDY=dy/dist;
+      // screenDX → lat (gauche/droite), screenDY → fwd (haut=avant, bas=arrière)
+      window._SWIPE_MOVE.vx=screenDX*norm;
+      window._SWIPE_MOVE.vz=screenDY*norm; // positif = vers le bas écran = recul
+      window._SWIPE_MOVE.active=true;
+      return;
+    }
+  },{passive:true});
+
+  renderer.domElement.addEventListener('touchend',function(e){
+    for(var i=0;i<e.changedTouches.length;i++){
+      if(e.changedTouches[i].identifier===_swipeTid){
+        _swipeTid=-1;_swipeActive=false;window._SWIPE_MOVE.active=false;
+        window._SWIPE_MOVE.vx=0;window._SWIPE_MOVE.vz=0;
+        return;
+      }
+    }
+  },{passive:true});
+
+  renderer.domElement.addEventListener('touchcancel',function(){
+    _swipeTid=-1;_swipeActive=false;window._SWIPE_MOVE.active=false;
+    window._SWIPE_MOVE.vx=0;window._SWIPE_MOVE.vz=0;
+  },{passive:true});
+})();
+
+function _doBeanFinish(beanEl,beanTx){
+  if(window._BEAN_DONE)return;window._BEAN_DONE=true;
+  window._BEAN_CLIMBING=false;
+  // Remettre le bouton A normal
+  var bBtn=document.getElementById('btnA');
+  if(bBtn){bBtn.innerHTML='<span>🅐</span>';bBtn.style.background='';}
+  // Aller au monde céleste
+  window._IN_FIRE_WORLD=false;OCEAN_MODE=false;window._IN_CLOUD_WORLD=true;
+  var CW=window._CLOUD_WORLD;P.x=CW.CX;P.y=CW.CY+80;P.z=CW.CZ;P.vx=0;P.vy=8;P.vz=0;P.flying=true;
+  if(beanEl)setTimeout(function(){beanEl.style.opacity=0;},400);
+  if(beanTx)setTimeout(function(){beanTx.style.opacity=0;},400);
+  popupEl.textContent='☁️ Monde Céleste !';popupEl.className='show';popTimer=5;
+}
 
 animate();
 })();
