@@ -2278,11 +2278,32 @@ renderer.domElement.addEventListener('touchend',function(e){
 },{passive:true});
 
 function _gotoVolcanoWorld(){
+  // Écran de transition
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0200;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center';
-  ov.innerHTML='<div style="font-family:Fredoka One,cursive;font-size:32px;color:#ff6622;text-shadow:0 0 20px #ff2200;margin-bottom:20px;text-align:center">🌋 Grotte du Volcan</div><div style="width:260px;height:14px;border-radius:8px;background:rgba(255,50,0,.15);border:2px solid rgba(255,100,50,.5);overflow:hidden"><div id="_vbar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#ff2200,#ff8800,#ffcc00);transition:width .1s ease"></div></div><div style="font-family:Fredoka One,cursive;font-size:14px;color:#ff8844;margin-top:12px">Kirby plonge dans le cratère !</div>';
+  ov.innerHTML='<div style="font-family:\'Fredoka One\',cursive;font-size:32px;color:#ff6622;text-shadow:0 0 20px #ff2200;margin-bottom:20px;text-align:center">🌋 Grotte du Volcan</div><div style="width:260px;height:14px;border-radius:8px;background:rgba(255,50,0,.15);border:2px solid rgba(255,100,50,.5);overflow:hidden"><div id="_vbar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#ff2200,#ff8800,#ffcc00);transition:width .08s ease"></div></div><div style="font-family:\'Fredoka One\',cursive;font-size:14px;color:#ff8844;margin-top:12px">Kirby plonge dans le cratère !</div>';
   document.body.appendChild(ov);
-  var pct=0;var iv=setInterval(function(){pct=Math.min(100,pct+3.5);document.getElementById('_vbar').style.width=pct+'%';if(pct>=100){clearInterval(iv);setTimeout(function(){window.location.href='volcano_world.html';},200);}},50);
+  var pct=0;
+  var iv=setInterval(function(){
+    pct=Math.min(100,pct+4);
+    var bar=document.getElementById('_vbar');
+    if(bar)bar.style.width=pct+'%';
+    if(pct>=100){
+      clearInterval(iv);
+      // Activer le monde lave in-page (déjà construit dans la scène)
+      window._IN_FIRE_WORLD=true;
+      OCEAN_MODE=false;
+      var FW=window._FIRE_WORLD;
+      P.x=FW.FX;P.z=FW.FZ;
+      P.y=FW.FY+FW.FH-60;
+      P.vx=0;P.vy=-4;P.vz=0;P.flying=false;P.onGround=false;
+      setTimeout(function(){
+        document.body.removeChild(ov);
+        popupEl.textContent='🌋 Monde Souterrain de Lave !';popupEl.className='show';popTimer=5;
+        zoneAnnEl.textContent='🔥 Gouffre de Lave !';zoneAnnEl.className='show';zoneAnnTimer=5;
+      },200);
+    }
+  },40);
 }
 
 // ══════════════════════════════════════════════════════
