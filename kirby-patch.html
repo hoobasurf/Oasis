@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>🔧 Patch Kirby Dream World</title>
+<style>
+body{font-family:'Courier New',monospace;background:#0a0a1a;color:#aaffaa;padding:30px;max-width:700px;margin:0 auto}
+h1{color:#ff8844;font-size:22px;margin-bottom:6px}
+.status{background:#001100;border:1px solid #33aa33;border-radius:8px;padding:12px;margin:12px 0;font-size:13px;line-height:1.8}
+.err{border-color:#aa3333;color:#ffaaaa;background:#110000}
+button{background:linear-gradient(135deg,#ff5500,#ff8800);color:#fff;border:none;padding:12px 24px;border-radius:10px;font-size:16px;cursor:pointer;margin:8px 4px;font-weight:bold}
+button:disabled{opacity:.4;cursor:not-allowed}
+#drop-zone{border:3px dashed #ff8844;border-radius:12px;padding:30px;text-align:center;color:#ff8844;font-size:16px;margin:16px 0;cursor:pointer;transition:background .2s}
+#drop-zone.over{background:rgba(255,136,68,.1)}
+#download-links{display:none}
+#download-links a{display:inline-block;background:linear-gradient(135deg,#33aa66,#22cc88);color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;margin:6px;font-weight:bold;font-size:15px}
+pre{background:#001100;border:1px solid #224422;border-radius:6px;padding:10px;font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<h1>🔧 Patch Kirby Dream World</h1>
+<p style="color:#88aaff;font-size:13px">Ce patch applique les modifications demandées à ton fichier <b>kirby_fixed.html</b>.</p>
+
+<div id="drop-zone" onclick="document.getElementById('file-input').click()">
+  📂 Clique ici ou glisse-dépose ton fichier <b>kirby_fixed.html</b>
+  <input id="file-input" type="file" accept=".html" style="display:none">
+</div>
+
+<div class="status" id="log">En attente du fichier...</div>
+
+<div id="download-links">
+  <p style="color:#ffee44;font-weight:bold;margin-bottom:8px">✅ Patch appliqué ! Télécharge :</p>
+  <a id="dl-main" href="#" download="kirby_fixed.html">⬇️ kirby_fixed.html (modifié)</a>
+</div>
+
+<script>
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
+var logEl = document.getElementById('log');
+var dlLinks = document.getElementById('download-links');
+
+function log(msg, err) {
+  logEl.innerHTML += '<br>' + (err ? '<span style="color:#ff5544">❌ ' : '<span style="color:#44ffaa">✅ ') + msg + '</span>';
+  logEl.className = 'status' + (err ? ' err' : '');
+}
+
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.className = 'over'; });
+dropZone.addEventListener('dragleave', function() { dropZone.className = ''; });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.className = ''; handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', function() { handleFile(this.files[0]); });
+
+function handleFile(file) {
+  if (!file) return;
+  logEl.innerHTML = 'Lecture de ' + file.name + '...';
+  var reader = new FileReader();
+  reader.onload = function(e) { applyPatch(e.target.result); };
+  reader.readAsText(file);
+}
+
+function applyPatch(code) {
+  var original = code;
+  var changes = [];
+
+  // ══ 1. VOLUME MASTER plus fort (mélodies dominantes) ══
+  if (code.indexOf('_MASTER.gain.value=0.42') !== -1) {
+    code = code.replace(/_MASTER\.gain\.value=0\.42/g, '_MASTER.gain.value=0.58');
+    changes.push('Volume master: 0.42 → 0.58 (mélodies plus fortes)');
+  }
+  // Aussi dans le toggle mute
+  code = code.replace(/if\(_MASTER\)_MASTER\.gain\.value=_MUTED\?0:0\.42/g,
+    'if(_MASTER)_MASTER.gain.value=_MUTED?0:0.58');
+
+  // ══ 2. VOLUME SFX réduit (bruitages moins forts) ══
+  var sfxCount = (code.match(/,0\.28,now\+/g) || []).length;
+  if (sfxCount > 0) {
+    code = code.replace(/,0\.28,now\+/g, ',0.13,now+');
+    changes.push('Volume SFX: 0.28 → 0.13 (' + sfxCount + ' occurrences) — bruitages réduits');
+  }
+
+  // ══ 3. SUPPRIMER son 'fly' quand bouton A en vol → vibration ══
+  // Dans keydown Space (3 occurrences du fly en vol)
+  code = code.replace(
+    /P\.flying=true;P\.vy=Math\.min\(P\.vy\+3\.0,8\);playSound\('fly'\);/g,
+    "P.flying=true;P.vy=Math.min(P.vy+3.0,8);if(navigator.vibrate)navigator.vibrate([30,10,30]);"
+  );
+  code = code.replace(
+    /P\.flying=true;P\.vy=Math\.min\(P\.vy\+3,8\);playSound\('fly'\);/g,
+    "P.flying=true;P.vy=Math.min(P.vy+3,8);if(navigator.vibrate)navigator.vibrate([30,10,30]);"
+  );
+  // Deuxième appui vol (vy+2.2 fly)
+  code = code.replace(
+    /\}\s*else\{P\.vy=Math\.min\(P\.vy\+2\.2,8\);playSound\('fly'\);\}/g,
+    '}else{P.vy=Math.min(P.vy+2.2,8);if(navigator.vibrate)navigator.vibrate([15]);}'
+  );
+  changes.push('Bouton A vol: son fly supprimé → vibration 30-10-30ms');
+
+  // ══ 4. VIBRATION dans takeDamage ══
+  code = code.replace(
+    /playSound\('hit'\);\s*if\(_dmgFlash\)/,
+    "playSound('hit');\n  if(navigator.vibrate)navigator.vibrate([80,20,80,20,80]);\n  if(_dmgFlash)"
+  );
+  changes.push('takeDamage: vibration ajoutée [80,20,80,20,80]');
+
+  // ══ 5. CSS TRANSITION VOLCAN ══
+  var volcanoCSS = `
+/* ══ TRANSITION VOLCAN ══ */
+#volcano-transition{position:fixed;top:0;left:0;width:100%;height:100%;z-index:95;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .6s ease}
+#volcano-transition.active{display:flex}
+#volcano-transition.visible{opacity:1}
+#vtitle{font-family:'Fredoka One',cursive;font-size:36px;color:#ff6600;text-shadow:0 0 30px #ff2200,0 4px 0 #880000;text-align:center;margin-bottom:14px}
+#vsub{font-family:'Fredoka One',cursive;font-size:18px;color:#ff8844;text-align:center;margin-bottom:20px;opacity:.85}
+#vbar-bg{width:280px;height:20px;border-radius:10px;background:rgba(255,50,0,.15);border:2px solid rgba(255,100,50,.5);overflow:hidden;margin-top:8px}
+#vbar{height:100%;width:0%;border-radius:8px;background:linear-gradient(90deg,#ff2200,#ff8800,#ffcc00)}
+#vcanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+`;
+  if (code.indexOf('#volcano-transition') === -1) {
+    code = code.replace('</style>', volcanoCSS + '</style>');
+
+```
+changes.push('CSS transition volcan ajouté');
+```
+
+}
+
+// ══ 6. HTML TRANSITION VOLCAN ══
+var volcanoHTML = `
+
+<!-- Transition Volcan — animation avec particules lave -->
+
+<div id="volcano-transition">
+  <canvas id="vcanvas"></canvas>
+  <div style="position:relative;z-index:2;text-align:center;padding:20px">
+    <div id="vtitle">🌋 Kirby plonge dans le cratère !</div>
+    <div id="vsub">Monde souterrain de lave…</div>
+    <div id="vbar-bg"><div id="vbar"></div></div>
+  </div>
+</div>
+`;
+  if (code.indexOf('id="volcano-transition"') === -1) {
+    code = code.replace('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">',
+      volcanoHTML + '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">');
+    changes.push('HTML overlay transition volcan ajouté');
+  }
+
+// ══ 7. FONCTION startVolcanoTransition + redirect ══
+var volcanoFunc = `
+// ══════════════════════════════════════════════════════
+// ANIMATION TRANSITION VOLCAN → volcano_world.html
+// ══════════════════════════════════════════════════════
+function startVolcanoTransition(){
+if(window._volcanoTransitionRunning)return;
+window._volcanoTransitionRunning=true;
+var vt=document.getElementById(‘volcano-transition’);
+var vbar=document.getElementById(‘vbar’);
+var vtitle=document.getElementById(‘vtitle’);
+var vsub=document.getElementById(‘vsub’);
+var vc=document.getElementById(‘vcanvas’);
+if(!vt)return;
+vt.className=‘active’;
+setTimeout(function(){vt.className=‘active visible’;},30);
+startBGM(8);
+// Canvas particules lave animées
+if(vc){
+vc.width=innerWidth;vc.height=innerHeight;
+var ctx=vc.getContext(‘2d’);
+var particles=[];
+for(var i=0;i<90;i++){
+particles.push({x:Math.random()*innerWidth,y:innerHeight+Math.random()*200,vx:(Math.random()-.5)*3,vy:-(2+Math.random()*5),r:3+Math.random()*12,life:1,col:[’#ff2200’,’#ff5500’,’#ff8800’,’#ffaa00’,’#ffcc00’][Math.floor(Math.random()*5)]});
+}
+var _pt=0;
+function drawP(){
+if(!window._volcanoTransitionRunning)return;
+ctx.clearRect(0,0,vc.width,vc.height);
+// Halo central lave
+var g=ctx.createRadialGradient(vc.width/2,vc.height*.65,30,vc.width/2,vc.height/2,vc.width*.55);
+g.addColorStop(0,‘rgba(255,80,0,.4)’);g.addColorStop(.5,‘rgba(180,20,0,.2)’);g.addColorStop(1,‘rgba(0,0,0,0)’);
+ctx.fillStyle=g;ctx.fillRect(0,0,vc.width,vc.height);
+// Particules
+particles.forEach(function(p){
+p.x+=p.vx+Math.sin(_pt*.04+p.x*.008)*.9;p.y+=p.vy;p.vy*=.986;p.life-=.007;p.r*=.996;
+if(p.y<-p.r*2||p.life<0){p.y=innerHeight+20;p.x=Math.random()*innerWidth;p.life=.7+Math.random()*.3;p.r=3+Math.random()*12;p.vy=-(1.8+Math.random()*4.5);}
+ctx.save();ctx.globalAlpha=p.life*.9;
+var g2=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2.2);
+g2.addColorStop(0,’#fff8’);g2.addColorStop(.25,p.col);g2.addColorStop(1,‘rgba(0,0,0,0)’);
+ctx.fillStyle=g2;ctx.beginPath();ctx.arc(p.x,p.y,p.r*2.2,0,Math.PI*2);ctx.fill();
+ctx.restore();
+});
+_pt++;
+requestAnimationFrame(drawP);
+}
+drawP();
+}
+// Messages séquencés
+var msgs=[
+{t:500, title:‘🌋 Kirby plonge dans le cratère !’, sub:‘La lave gronde sous tes pieds…’},
+{t:1400,title:‘🔥 Chaleur infernale !’,              sub:‘Chargement du monde souterrain…’},
+{t:2300,title:‘⚠️ Plantes carnivores & boss !’,      sub:‘Prépare-toi au combat…’},
+{t:3100,title:‘💀 Bonne chance Kirby !’,              sub:‘Ouverture de la Grotte du Volcan…’},
+];
+msgs.forEach(function(m){
+setTimeout(function(){
+if(vtitle)vtitle.textContent=m.title;
+if(vsub)vsub.textContent=m.sub;
+},m.t);
+});
+// Barre de chargement
+var startT=Date.now(),dur=3800;
+function updateBar(){
+var pct=Math.min(100,(Date.now()-startT)/dur*100);
+// Légère irrégularité pour effet réaliste
+var jitter=Math.sin(Date.now()*.005)*1.5;
+if(vbar)vbar.style.width=Math.max(0,Math.min(100,pct+jitter))+’%’;
+if(pct<99)requestAnimationFrame(updateBar);
+}
+updateBar();
+// Sauvegarder état et rediriger
+setTimeout(function(){
+if(vbar)vbar.style.width=‘100%’;
+try{sessionStorage.setItem(‘kirby_lives’,_LIVES);sessionStorage.setItem(‘kirby_score’,_SCORE);sessionStorage.setItem(‘kirby_stars’,starScore);}catch(e){}
+setTimeout(function(){window.location.href=‘volcano_world.html’;},350);
+},3900);
+}
+
+`;
+
+if (code.indexOf(‘startVolcanoTransition’) === -1 || code.indexOf(‘function startVolcanoTransition’) === -1) {
+code = code.replace(’\nanimate();\n})();’, volcanoFunc + ‘\nanimate();\n})();’);
+changes.push(‘Fonction startVolcanoTransition() ajoutée (particules + barre de chargement + redirect)’);
+}
+
+// ══ 8. REMPLACER l’entrée volcan directe par la transition animée ══
+// Pattern original: entrée volcan sans dragon → _IN_FIRE_WORLD=true
+var oldVolcano = /// Entrée volcan directe (sans dragon)[\s\S]*?playSound(‘lava_enter’);\s*}\s*}/;
+var newVolcano = `  // Entrée volcan directe → BELLE ANIMATION → volcano_world.html if(window._VOLCANO&&OCEAN_MODE&&!P.inSub&&!DRAGON_RIDING&&!window._IN_FIRE_WORLD&&!window._volcanoTransitionRunning){ var vdx=P.x-window._VOLCANO.x,vdz=P.z-window._VOLCANO.z; if(vdx*vdx+vdz*vdz<window._VOLCANO.r*window._VOLCANO.r&&P.y<window._VOLCANO.y+20&&P.vy<-.5){ P.vx=0;P.vy=0;P.vz=0; playSound('lava_enter'); startVolcanoTransition(); } }`;
+
+if (oldVolcano.test(code)) {
+code = code.replace(oldVolcano, newVolcano);
+changes.push(‘Entrée volcan → transition animée → volcano_world.html’);
+} else {
+// Fallback: chercher le pattern simplifié
+code = code.replace(
+/window._IN_FIRE_WORLD=true;P.x=window._VOLCANO.x;P.z=window._VOLCANO.z;\s*P.y=(window._FIRE_WORLD?window._FIRE_WORLD.FY:-480)+340;P.vx=0;P.vy=-4;P.vz=0;\s*playSound(‘lava_enter’);/,
+“P.vx=0;P.vy=0;P.vz=0;playSound(‘lava_enter’);startVolcanoTransition();”
+);
+changes.push(‘Entrée volcan (fallback) → transition animée’);
+}
+
+// ══ AUSSI: transition dragon (après que le dragon lâche Kirby dans le volcan) ══
+// Remplacer window._IN_FIRE_WORLD=true dans le bloc dragon
+code = code.replace(
+/window._IN_FIRE_WORLD=true;\s*P.x=window._VOLCANO.x;P.z=window._VOLCANO.z;\s*P.y=(window._FIRE_WORLD?window._FIRE_WORLD.FY:-480)+380;P.vy=-4;/,
+“P.vx=0;P.vy=0;P.vz=0;startVolcanoTransition();”
+);
+
+// ══ RÉSUMÉ ══
+var unchanged = (code === original);
+if (unchanged) {
+logEl.innerHTML = ‘’;
+log(‘Aucune modification détectée. Le fichier est peut-être déjà patché ou a une structure différente.’, true);
+log(‘Essaie quand même de télécharger le fichier volcano_world.html séparément.’, false);
+} else {
+logEl.innerHTML = ‘’;
+changes.forEach(function(c) { log(c); });
+log(‘Patch appliqué avec succès ! (’ + changes.length + ’ modifications)’, false);
+}
+
+// Créer le fichier à télécharger
+var blob = new Blob([code], {type:‘text/html’});
+var url = URL.createObjectURL(blob);
+var dlMain = document.getElementById(‘dl-main’);
+dlMain.href = url;
+dlLinks.style.display = ‘block’;
+
+// Note importante
+logEl.innerHTML += ‘<br><br><span style="color:#ffee44">📌 IMPORTANT: place <b>volcano_world.html</b> dans le même dossier que kirby_fixed.html !</span>’;
+}
+</script>
+
+</body>
+</html>
