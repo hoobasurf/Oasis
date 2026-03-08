@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KIRBY DREAM WORLD — Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#87ceeb}
+canvas{display:block;position:fixed;top:0;left:0;z-index:0}
+
+/* ─── LOGO ─── */
+#logo{
+position:fixed;top:32px;left:50%;transform:translateX(-50%);
+font-family:‘Fredoka One’,cursive;font-size:clamp(28px,6vw,52px);
+color:#fff;text-shadow:0 5px 0 #cc44aa,0 8px 20px rgba(200,50,150,.4);
+white-space:nowrap;z-index:20;pointer-events:none;
+animation:logoBob 3s ease-in-out infinite;
+}
+#logo span{color:#ffe066;text-shadow:0 4px 0 #cc8800,0 6px 18px rgba(200,120,0,.4);}
+@keyframes logoBob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-8px);}}
+
+/* ─── SUBTITLE ─── */
+#subtitle{
+position:fixed;top:clamp(90px,14vw,115px);left:50%;transform:translateX(-50%);
+font-family:‘Nunito’,sans-serif;font-size:clamp(11px,2.5vw,15px);font-weight:700;
+color:rgba(255,255,255,.75);letter-spacing:3px;text-transform:uppercase;
+z-index:20;pointer-events:none;white-space:nowrap;
+}
+
+/* ─── MENU BUTTONS ─── */
+#menu{
+position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+display:flex;flex-direction:column;align-items:center;gap:18px;
+z-index:20;
+}
+
+.menu-btn{
+position:relative;width:clamp(240px,70vw,360px);
+border:none;cursor:pointer;border-radius:30px;
+font-family:‘Fredoka One’,cursive;font-size:clamp(22px,5vw,32px);
+color:#fff;padding:18px 28px 22px;
+display:flex;align-items:center;gap:16px;
+transition:transform .12s cubic-bezier(.34,1.56,.64,1),box-shadow .12s ease;
+user-select:none;
+}
+.menu-btn:active{transform:translateY(4px) scale(.97);}
+.menu-btn::after{
+content:’’;position:absolute;inset:0;border-radius:30px;
+background:rgba(255,255,255,.15);opacity:0;
+transition:opacity .15s ease;
+}
+.menu-btn:hover::after{opacity:1;}
+
+.btn-icon{
+width:clamp(44px,9vw,60px);height:clamp(44px,9vw,60px);
+border-radius:50%;display:flex;align-items:center;justify-content:center;
+font-size:clamp(22px,5vw,30px);flex-shrink:0;
+background:rgba(255,255,255,.22);
+}
+.btn-label{flex:1;text-align:left;line-height:1.1;}
+.btn-label small{display:block;font-family:‘Nunito’,sans-serif;font-size:clamp(10px,2vw,13px);font-weight:700;opacity:.82;margin-top:2px;}
+
+/* Maison — rose kirby */
+#btn-maison{
+background:linear-gradient(135deg,#ff66bb,#ff3399);
+box-shadow:0 7px 0 #bb0066,0 10px 28px rgba(255,60,150,.35);
+}
+#btn-maison .btn-icon{background:rgba(255,255,255,.25);}
+
+/* Monde — bleu-vert aventure */
+#btn-monde{
+background:linear-gradient(135deg,#22cc88,#0099cc);
+box-shadow:0 7px 0 #006688,0 10px 28px rgba(0,150,200,.35);
+}
+#btn-monde .btn-icon{background:rgba(255,255,255,.22);}
+
+/* Magasin — or soleil */
+#btn-magasin{
+background:linear-gradient(135deg,#ffcc00,#ff8800);
+box-shadow:0 7px 0 #cc5500,0 10px 28px rgba(255,140,0,.35);
+}
+#btn-magasin .btn-icon{background:rgba(255,255,255,.22);}
+
+/* ─── CRÉATURE ─── */
+#creature-wrap{
+position:fixed;bottom:28px;right:28px;z-index:25;
+display:flex;flex-direction:column;align-items:center;gap:4px;
+animation:creatureEnter .6s .8s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes creatureEnter{from{transform:translateY(80px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+#creature-canvas{cursor:pointer;display:block;}
+#bubble{
+position:absolute;bottom:98px;right:0;
+font-family:‘Fredoka One’,cursive;font-size:12px;color:#333;
+background:#fff;border-radius:16px;padding:7px 12px;
+box-shadow:0 3px 12px rgba(0,0,0,.18);
+white-space:nowrap;min-width:100px;text-align:center;
+opacity:0;transform:scale(0) translateY(10px);
+transform-origin:bottom right;
+transition:opacity .2s ease,transform .2s cubic-bezier(.34,1.56,.64,1);
+pointer-events:none;
+}
+#bubble::after{
+content:’’;position:absolute;bottom:-8px;right:18px;
+border:5px solid transparent;border-top-color:#fff;
+}
+#bubble.show{opacity:1;transform:scale(1) translateY(0);}
+
+/* ─── MODALS ─── */
+.modal-overlay{
+position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+z-index:50;opacity:0;pointer-events:none;
+transition:opacity .25s ease;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{
+position:absolute;top:50%;left:50%;
+transform:translate(-50%,-50%) scale(0);
+width:clamp(280px,88vw,460px);max-height:80vh;overflow-y:auto;
+border-radius:28px;padding:28px 24px 24px;
+transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+font-family:‘Fredoka One’,cursive;
+}
+.modal-overlay.open .modal-box{transform:translate(-50%,-50%) scale(1);}
+.modal-close{
+position:absolute;top:14px;right:16px;width:36px;height:36px;border-radius:50%;
+background:rgba(255,255,255,.22);border:none;cursor:pointer;font-size:18px;
+display:flex;align-items:center;justify-content:center;
+transition:background .15s ease;
+}
+.modal-close:hover{background:rgba(255,255,255,.38);}
+.modal-title{font-size:26px;margin-bottom:6px;text-align:center;}
+.modal-sub{font-family:‘Nunito’,sans-serif;font-weight:700;font-size:13px;text-align:center;margin-bottom:20px;opacity:.8;}
+
+/* ─── MODAL MAISON ─── */
+#modal-maison .modal-box{
+background:linear-gradient(160deg,rgba(30,8,55,.97),rgba(60,15,90,.97));
+border:2.5px solid rgba(255,100,200,.5);
+color:#fff;
+}
+.room-preview{
+width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;
+background:linear-gradient(180deg,#1a0830 0%,#2a1050 100%);
+position:relative;margin-bottom:16px;
+}
+.room-canvas{width:100%;height:100%;}
+.room-info{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.room-stat{
+background:rgba(255,255,255,.08);border-radius:14px;padding:12px;
+display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.room-stat .val{font-size:22px;color:#ffe066;}
+.room-stat .lbl{font-family:‘Nunito’,sans-serif;font-weight:700;font-size:11px;opacity:.7;}
+.start-btn{
+display:block;width:100%;padding:14px;border-radius:18px;border:none;
+background:linear-gradient(135deg,#ff66bb,#cc22aa);
+color:#fff;font-family:‘Fredoka One’,cursive;font-size:20px;cursor:pointer;
+box-shadow:0 5px 0 #880066;transition:transform .1s ease,box-shadow .1s ease;
+}
+.start-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #880066;}
+
+/* ─── MODAL MONDE ─── */
+#modal-monde .modal-box{
+background:linear-gradient(160deg,rgba(0,20,50,.97),rgba(0,40,80,.97));
+border:2.5px solid rgba(50,200,150,.5);
+color:#fff;
+}
+.world-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.world-card{
+border-radius:16px;padding:14px 16px;cursor:pointer;
+display:flex;align-items:center;gap:14px;
+transition:transform .12s ease,filter .12s ease;
+border:2px solid rgba(255,255,255,.12);
+position:relative;overflow:hidden;
+}
+.world-card:hover{transform:translateX(5px);}
+.world-card.locked{filter:grayscale(.7);cursor:not-allowed;}
+.world-card::before{
+content:’’;position:absolute;inset:0;
+background:rgba(255,255,255,.04);
+}
+.world-card .w-icon{font-size:28px;flex-shrink:0;}
+.world-card .w-info{flex:1;}
+.world-card .w-name{font-size:17px;}
+.world-card .w-desc{font-family:‘Nunito’,sans-serif;font-size:11px;font-weight:700;opacity:.72;margin-top:1px;}
+.world-card .w-lock{font-size:18px;flex-shrink:0;}
+.world-card .w-stars{font-size:12px;color:#ffe066;flex-shrink:0;}
+.w1{background:linear-gradient(135deg,rgba(80,200,80,.25),rgba(40,120,40,.15));}
+.w2{background:linear-gradient(135deg,rgba(60,30,120,.35),rgba(30,15,80,.2));}
+.w3{background:linear-gradient(135deg,rgba(150,210,255,.2),rgba(80,140,200,.15));}
+.w4{background:linear-gradient(135deg,rgba(255,180,50,.2),rgba(200,100,20,.15));}
+.w5{background:linear-gradient(135deg,rgba(0,100,200,.25),rgba(0,60,140,.15));}
+.w6{background:linear-gradient(135deg,rgba(255,60,0,.25),rgba(180,20,0,.15));}
+.w7{background:linear-gradient(135deg,rgba(200,180,255,.2),rgba(120,80,200,.15));}
+
+/* ─── MODAL MAGASIN ─── */
+#modal-magasin .modal-box{
+background:linear-gradient(160deg,rgba(30,20,0,.97),rgba(60,40,0,.97));
+border:2.5px solid rgba(255,200,50,.5);
+color:#fff;
+}
+.shop-tabs{display:flex;gap:6px;margin-bottom:16px;}
+.shop-tab{
+flex:1;padding:9px 4px;border-radius:12px;border:none;cursor:pointer;
+font-family:‘Fredoka One’,cursive;font-size:14px;color:#fff;
+background:rgba(255,255,255,.08);transition:background .15s ease;
+}
+.shop-tab.active{background:rgba(255,200,50,.35);border:2px solid rgba(255,200,50,.5);}
+.coins-bar{
+display:flex;align-items:center;justify-content:space-between;
+background:rgba(255,200,50,.12);border-radius:12px;padding:10px 14px;
+margin-bottom:14px;font-size:16px;
+}
+.coins-bar .amount{color:#ffe066;font-size:20px;}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.shop-item{
+border-radius:16px;background:rgba(255,255,255,.07);
+border:1.5px solid rgba(255,200,50,.2);padding:14px 10px;
+display:flex;flex-direction:column;align-items:center;gap:6px;
+cursor:pointer;transition:transform .12s ease,background .15s ease;
+position:relative;
+}
+.shop-item:hover{background:rgba(255,200,50,.14);transform:translateY(-3px);}
+.shop-item.owned{border-color:rgba(80,255,150,.4);background:rgba(80,255,150,.07);}
+.shop-item .s-icon{font-size:36px;}
+.shop-item .s-name{font-size:13px;text-align:center;line-height:1.2;}
+.shop-item .s-price{
+font-size:13px;color:#ffe066;
+background:rgba(255,200,0,.15);border-radius:8px;padding:3px 9px;
+}
+.shop-item.owned .s-price{color:#44ff88;background:rgba(80,255,150,.15);}
+.shop-item .s-badge{
+position:absolute;top:8px;right:8px;
+font-size:9px;background:rgba(255,60,120,.8);
+border-radius:8px;padding:2px 6px;color:#fff;
+font-family:‘Nunito’,sans-serif;font-weight:700;
+}
+.creature-shop{
+background:rgba(255,150,50,.12);border-radius:14px;padding:12px 14px;
+border:1.5px solid rgba(255,150,50,.3);
+display:flex;align-items:center;gap:12px;
+}
+.creature-shop canvas{border-radius:50%;background:rgba(255,255,255,.05);}
+.creature-shop .c-info .c-name{font-size:16px;}
+.creature-shop .c-info .c-desc{font-family:‘Nunito’,sans-serif;font-size:11px;font-weight:700;opacity:.72;margin-top:2px;}
+.creature-shop .c-info .c-stats{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+.creature-shop .c-info .c-stat{font-size:10px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px 7px;font-family:‘Nunito’,sans-serif;font-weight:700;}
+
+/* ─── MUTE / SETTINGS ─── */
+#top-bar{
+position:fixed;top:14px;right:14px;z-index:25;
+display:flex;gap:8px;align-items:center;
+}
+.top-btn{
+font-family:‘Fredoka One’,cursive;font-size:13px;color:#fff;
+background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);
+border-radius:20px;padding:5px 14px;cursor:pointer;
+transition:background .15s ease;
+pointer-events:all;
+}
+.top-btn:hover{background:rgba(255,255,255,.28);}
+
+/* ─── ÉTOILES HUD ─── */
+#hud-bar{
+position:fixed;top:14px;left:14px;z-index:25;
+display:flex;gap:8px;
+}
+.hud-chip{
+font-family:‘Fredoka One’,cursive;font-size:13px;color:#fff;
+background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);
+border-radius:20px;padding:5px 12px;
+display:flex;align-items:center;gap:5px;
+}
+.hud-chip span{color:#ffe066;}
+
+/* ─── ANIMATIONS boutons ─── */
+@keyframes btnPop{0%{transform:scale(1);}50%{transform:scale(1.07);}100%{transform:scale(1);}}
+.menu-btn.pop{animation:btnPop .2s ease;}
+
+/* ─── PARTICLES ─── */
+#particles-canvas{position:fixed;inset:0;pointer-events:none;z-index:1;}
+</style>
+
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<canvas id="particles-canvas"></canvas>
+
+<div id="hud-bar">
+  <div class="hud-chip">⭐ <span id="star-count">0</span></div>
+  <div class="hud-chip">❤️ <span id="life-count">10</span></div>
+  <div class="hud-chip">🪙 <span id="coin-count">0</span></div>
+</div>
+
+<div id="top-bar">
+  <button class="top-btn" id="mute-btn">🔊 Son</button>
+  <button class="top-btn" id="settings-btn">⚙️</button>
+</div>
+
+<div id="logo">KIRBY <span>DREAM</span> WORLD</div>
+<div id="subtitle">✨ Choisis ton aventure ✨</div>
+
+<div id="menu">
+  <button class="menu-btn" id="btn-maison" onclick="openModal('maison')">
+    <div class="btn-icon">🏠</div>
+    <div class="btn-label">
+      Ma Maison
+      <small>Construis & décore ton espace 3D</small>
+    </div>
+    <span>›</span>
+  </button>
+  <button class="menu-btn" id="btn-monde" onclick="openModal('monde')">
+    <div class="btn-icon">🌍</div>
+    <div class="btn-label">
+      Les Mondes
+      <small>Explore & collectionne des pièces</small>
+    </div>
+    <span>›</span>
+  </button>
+  <button class="menu-btn" id="btn-magasin" onclick="openModal('magasin')">
+    <div class="btn-icon">🛒</div>
+    <div class="btn-label">
+      Magasin
+      <small>Décorations, objets & créatures</small>
+    </div>
+    <span>›</span>
+  </button>
+</div>
+
+<!-- Créature compagnon -->
+
+<div id="creature-wrap">
+  <canvas id="creature-canvas" width="88" height="88"></canvas>
+  <div id="bubble" id="speech"></div>
+</div>
+
+<!-- ══════════════════ MODAL MAISON ══════════════════ -->
+
+<div class="modal-overlay" id="modal-maison">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('maison')">✕</button>
+    <div class="modal-title">🏠 Ma Maison</div>
+    <div class="modal-sub">Plateforme de construction 3D personnelle</div>
+    <div class="room-preview">
+      <canvas class="room-canvas" id="room-preview-canvas"></canvas>
+    </div>
+    <div class="room-info">
+      <div class="room-stat"><div class="val">🪑 12</div><div class="lbl">Meubles placés</div></div>
+      <div class="room-stat"><div class="val">🏅 3</div><div class="lbl">Pièces débloquées</div></div>
+      <div class="room-stat"><div class="val">⭐ 0</div><div class="lbl">Étoiles dépensées</div></div>
+      <div class="room-stat"><div class="val">🎨 5</div><div class="lbl">Styles disponibles</div></div>
+    </div>
+    <div style="font-family:'Nunito',sans-serif;font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin-bottom:14px;line-height:1.6">
+      Utilise les pièces récupérées dans les mondes pour acheter des éléments de décoration et construire la maison de tes rêves !
+    </div>
+    <button class="start-btn" onclick="gotoGame('maison')">🏠 Entrer dans ma Maison</button>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL MONDE ══════════════════ -->
+
+<div class="modal-overlay" id="modal-monde">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('monde')">✕</button>
+    <div class="modal-title">🌍 Choisis un Monde</div>
+    <div class="modal-sub">Explore pour récolter des pièces et des étoiles</div>
+    <div class="world-grid">
+      <div class="world-card w1" onclick="gotoGame('plaine')">
+        <div class="w-icon">🌸</div>
+        <div class="w-info"><div class="w-name">Plaine des Fleurs</div><div class="w-desc">Départ · Niveau facile</div></div>
+        <div class="w-stars">⭐ 8/12</div>
+      </div>
+      <div class="world-card w2" onclick="gotoGame('foret')">
+        <div class="w-icon">🌲</div>
+        <div class="w-info"><div class="w-name">Forêt Enchantée</div><div class="w-desc">Mystérieux · Moyen</div></div>
+        <div class="w-stars">⭐ 3/10</div>
+      </div>
+      <div class="world-card w3" onclick="gotoGame('neige')">
+        <div class="w-icon">❄️</div>
+        <div class="w-info"><div class="w-name">Pic des Neiges</div><div class="w-desc">Aérien · Moyen</div></div>
+        <div class="w-stars">⭐ 0/8</div>
+      </div>
+      <div class="world-card w5" onclick="gotoGame('ocean')">
+        <div class="w-icon">🐟</div>
+        <div class="w-info"><div class="w-name">Domaine Aquatique</div><div class="w-desc">Sous-marin · Difficile</div></div>
+        <div class="w-stars">⭐ 1/14</div>
+      </div>
+      <div class="world-card w4" onclick="gotoGame('iles')">
+        <div class="w-icon">🌴</div>
+        <div class="w-info"><div class="w-name">Îles Tropicales</div><div class="w-desc">Dragon · Difficile</div></div>
+        <div class="w-stars">⭐ 0/16</div>
+      </div>
+      <div class="world-card w6 locked">
+        <div class="w-icon">🔥</div>
+        <div class="w-info"><div class="w-name">Gouffre de Lave</div><div class="w-desc">Attrape le Dragon d'abord !</div></div>
+        <div class="w-lock">🔒</div>
+      </div>
+      <div class="world-card w7 locked">
+        <div class="w-icon">☁️</div>
+        <div class="w-info"><div class="w-name">Monde Céleste</div><div class="w-desc">Haricot magique requis</div></div>
+        <div class="w-lock">🔒</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL MAGASIN ══════════════════ -->
+
+<div class="modal-overlay" id="modal-magasin">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('magasin')">✕</button>
+    <div class="modal-title">🛒 Magasin</div>
+    <div class="modal-sub">Dépense tes pièces pour embellir ta maison</div>
+
+```
+<div class="coins-bar">
+  <span>💰 Tes pièces</span>
+  <span class="amount" id="shop-coins">0 🪙</span>
+</div>
+
+<div class="shop-tabs">
+  <button class="shop-tab active" onclick="switchTab('meubles',this)">🪑 Meubles</button>
+  <button class="shop-tab" onclick="switchTab('deco',this)">🌺 Déco</button>
+  <button class="shop-tab" onclick="switchTab('creatures',this)">🐾 Créatures</button>
+</div>
+
+<div id="tab-meubles" class="shop-grid">
+  <div class="shop-item" onclick="buyItem(this,10)">
+    <span class="s-icon">🪑</span>
+    <div class="s-name">Canapé Nuage</div>
+    <div class="s-price">🪙 10</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,8)">
+    <span class="s-icon">🛏️</span>
+    <div class="s-name">Lit Étoilé</div>
+    <div class="s-price">🪙 8</div>
+    <div class="s-badge">NOUVEAU</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,15)">
+    <span class="s-icon">🪞</span>
+    <div class="s-name">Miroir Magique</div>
+    <div class="s-price">🪙 15</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,5)">
+    <span class="s-icon">🌿</span>
+    <div class="s-name">Plante Féerique</div>
+    <div class="s-price">🪙 5</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,20)">
+    <span class="s-icon">🎪</span>
+    <div class="s-name">Tente Kirby</div>
+    <div class="s-price">🪙 20</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,12)">
+    <span class="s-icon">🎡</span>
+    <div class="s-name">Manège Rêve</div>
+    <div class="s-price">🪙 12</div>
+  </div>
+</div>
+
+<div id="tab-deco" class="shop-grid" style="display:none">
+  <div class="shop-item" onclick="buyItem(this,3)">
+    <span class="s-icon">🌸</span>
+    <div class="s-name">Fleurs Roses</div>
+    <div class="s-price">🪙 3</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,6)">
+    <span class="s-icon">🎆</span>
+    <div class="s-name">Fontaine Lumière</div>
+    <div class="s-price">🪙 6</div>
+    <div class="s-badge">RARE</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,4)">
+    <span class="s-icon">🌈</span>
+    <div class="s-name">Arc-en-ciel Mur</div>
+    <div class="s-price">🪙 4</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,9)">
+    <span class="s-icon">⭐</span>
+    <div class="s-name">Étoiles Plafond</div>
+    <div class="s-price">🪙 9</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,7)">
+    <span class="s-icon">🍄</span>
+    <div class="s-name">Champignons Déco</div>
+    <div class="s-price">🪙 7</div>
+  </div>
+  <div class="shop-item" onclick="buyItem(this,18)">
+    <span class="s-icon">🏆</span>
+    <div class="s-name">Trophée Dragon</div>
+    <div class="s-price">🪙 18</div>
+    <div class="s-badge">LÉGENDAIRE</div>
+  </div>
+</div>
+
+<div id="tab-creatures" style="display:none;flex-direction:column;gap:10px">
+  <div class="creature-shop">
+    <canvas id="shop-creature-canvas" width="64" height="64"></canvas>
+    <div class="c-info">
+      <div class="c-name">⭐ Lumitos (actuel)</div>
+      <div class="c-desc">Ton compagnon de départ !</div>
+      <div class="c-stats">
+        <div class="c-stat">🌟 Niveau 1</div>
+        <div class="c-stat">💬 5 phrases</div>
+        <div class="c-stat">❤️ Fidèle</div>
+      </div>
+    </div>
+  </div>
+  <div class="creature-shop" style="opacity:.65;filter:grayscale(.5)">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:30px">🔒</div>
+    <div class="c-info">
+      <div class="c-name">🌊 Bullio</div>
+      <div class="c-desc">Créature de l'océan magique</div>
+      <div class="c-stats">
+        <div class="c-stat">🪙 50</div>
+        <div class="c-stat">💬 12 phrases</div>
+        <div class="c-stat">🌊 Aquatique</div>
+      </div>
+    </div>
+  </div>
+  <div class="creature-shop" style="opacity:.65;filter:grayscale(.5)">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:30px">🔒</div>
+    <div class="c-info">
+      <div class="c-name">🔥 Pyrouki</div>
+      <div class="c-desc">Né du volcan, yeux de braise</div>
+      <div class="c-stats">
+        <div class="c-stat">🪙 80</div>
+        <div class="c-stat">💬 18 phrases</div>
+        <div class="c-stat">🔥 Rare</div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+(function(){
+'use strict';
+
+// ══════════════════════════════════════════════════════
+// FOND 3D — ciel stylisé avec nuages & étoiles
+// ══════════════════════════════════════════════════════
+var renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight);
+var bgCanvas=document.getElementById('bg-canvas');
+bgCanvas.replaceWith(renderer.domElement);
+renderer.domElement.id='bg-canvas';
+renderer.domElement.style.cssText='position:fixed;top:0;left:0;z-index:0';
+window.addEventListener('resize',function(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x7ac8f5);
+scene.fog=new THREE.FogExp2(0xaad8f0,.008);
+
+var camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.5,2000);
+camera.position.set(0,60,200);camera.lookAt(0,30,0);
+
+var ambL=new THREE.AmbientLight(0xd0eeff,.8);scene.add(ambL);
+var sunL=new THREE.DirectionalLight(0xfff8d0,2.2);sunL.position.set(100,300,80);scene.add(sunL);
+var hemiL=new THREE.HemisphereLight(0xb5d8ff,0x88dd99,.9);scene.add(hemiL);
+
+// Sol herbu
+var ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000,1,1),new THREE.MeshToonMaterial({color:0x55cc44}));
+ground.rotation.x=-Math.PI/2;ground.position.y=-10;scene.add(ground);
+
+// Toon gradient
+var gd=new Uint8Array([30,30,40,255,90,90,100,255,160,158,170,255,220,218,230,255,255,253,255,255]);
+var gt=new THREE.DataTexture(gd,5,1,THREE.RGBAFormat);gt.needsUpdate=true;gt.magFilter=THREE.NearestFilter;gt.minFilter=THREE.NearestFilter;
+function mc(h){return new THREE.MeshToonMaterial({color:h,gradientMap:gt});}
+function mce(h,ei){return new THREE.MeshToonMaterial({color:h,emissive:new THREE.Color(h),emissiveIntensity:ei||.5,gradientMap:gt});}
+function mct(h,o){return new THREE.MeshToonMaterial({color:h,transparent:true,opacity:o,gradientMap:gt,depthWrite:false});}
+var OL=new THREE.MeshBasicMaterial({color:0x0a0a1a,side:THREE.BackSide});
+
+function addOL(m,s){var ol=new THREE.Mesh(m.geometry,OL);ol.scale.multiplyScalar(s||1.06);m.add(ol);}
+
+// ─── Nuages toon
+var CLOUDS=[];
+function makeCloud(x,y,z,sc){
+  var g=new THREE.Group();
+  var cols=[0xe8f4ff,0xc8e4ff,0x9ac5ee];
+  [[0,0,0,35],[22,6,8,28],[−20,5,−5,24],[-8,12,4,22],[18,-4,-10,20]].forEach(function(p,i){
+    var s=new THREE.Mesh(new THREE.SphereGeometry(p[3],10,8),mc(cols[Math.min(i,2)]));
+    s.position.set(p[0],p[1],p[2]);var ol2=new THREE.Mesh(new THREE.SphereGeometry(p[3],10,8),new THREE.MeshBasicMaterial({color:0x1a2a44,side:THREE.BackSide}));ol2.scale.setScalar(1.07);s.add(ol2);g.add(s);
+  });
+  g.position.set(x,y,z);g.scale.setScalar(sc||1);
+  g.userData.baseX=x;g.userData.baseY=y;g.userData.spd=.12+Math.random()*.1;g.userData.ph=Math.random()*Math.PI*2;
+  scene.add(g);CLOUDS.push(g);
+}
+for(var i=0;i<18;i++)makeCloud((Math.random()-.5)*900,80+Math.random()*120,-100+Math.random()*300-.3*(i*38),1+Math.random()*.8);
+
+// ─── Maisons kirby style
+function makeKirbyHouse(x,z,col){
+  var g=new THREE.Group();
+  var base=new THREE.Mesh(new THREE.BoxGeometry(55,44,55),mc(col));addOL(base,.054);g.add(base);base.position.y=22;
+  var roof=new THREE.Mesh(new THREE.ConeGeometry(42,36,4),mc(0xff4466));addOL(roof,.06);g.add(roof);roof.position.y=58;roof.rotation.y=Math.PI/4;
+  var door=new THREE.Mesh(new THREE.BoxGeometry(14,22,2),mc(0x884422));door.position.set(0,11,28.5);g.add(door);
+  var wr=new THREE.Mesh(new THREE.CircleGeometry(8,12),mc(0xaaddff));wr.position.set(18,32,28.5);wr.rotation.y=0;g.add(wr);
+  var wl=new THREE.Mesh(new THREE.CircleGeometry(8,12),mc(0xaaddff));wl.position.set(-18,32,28.5);g.add(wl);
+  g.position.set(x,-10,z);scene.add(g);return g;
+}
+makeKirbyHouse(-180,-80,0xffeeaa);makeKirbyHouse(220,-120,0xffccdd);makeKirbyHouse(-80,-160,0xccddff);
+
+// ─── Arbres
+function makeTree(x,z,lc){
+  var t=new THREE.Mesh(new THREE.CylinderGeometry(2.5,4,24,8),mc(0xbb7722));t.position.set(x,2,z);scene.add(t);
+  var l=new THREE.Mesh(new THREE.SphereGeometry(18,10,9),mc(lc||0x44cc55));l.position.set(x,32,z);addOL(l,.055);scene.add(l);
+}
+[-120,-200,-280,130,210,290,-160,240].forEach(function(x,i){makeTree(x,-50-i*12,[0x44cc55,0xff2255,0x9933ff,0xff7722][i%4]);});
+
+// ─── Fleurs
+for(var fi=0;fi<25;fi++){
+  var fx=(Math.random()-.5)*500,fz=(Math.random()-.5)*200-80;
+  var fc=[0xff88cc,0xffee44,0xcc88ff,0xff6644,0xffffff][fi%5];
+  var fl=new THREE.Mesh(new THREE.SphereGeometry(3,8,6),mc(fc));fl.position.set(fx,-5,fz);scene.add(fl);
+  var fs=new THREE.Mesh(new THREE.CylinderGeometry(.7,1,8,6),mc(0x44bb33));fs.position.set(fx,-9,fz);scene.add(fs);
+}
+
+// ─── Portiques déco
+var HOUSES=[];
+var titlePlat=new THREE.Mesh(new THREE.BoxGeometry(240,12,40),mc(0xffeecc));titlePlat.position.set(0,-4,-20);titlePlat.rotation.x=-.04;addOL(titlePlat,.03);scene.add(titlePlat);
+
+// Étoiles tournantes
+var STARS3=[];
+for(var si=0;si<8;si++){
+  var s=new THREE.Mesh(new THREE.SphereGeometry(5,10,8),mce(0xffee22,.9));s.position.set((Math.random()-.5)*400,80+Math.random()*80,(Math.random()-.5)*200-60);s.userData.ph=Math.random()*Math.PI*2;s.userData.by=s.position.y;
+  var sl=new THREE.PointLight(0xffee44,1.5,120);sl.position.copy(s.position);scene.add(sl);
+  scene.add(s);STARS3.push(s);
+}
+
+// ══════════════════════════════════════════════════════
+// APERÇU CHAMBRE — petit canvas 3D dans la modale Maison
+// ══════════════════════════════════════════════════════
+var roomRenderer=null,roomScene=null,roomCamera=null,roomAnim=null;
+function initRoomPreview(){
+  if(roomRenderer)return;
+  var rc=document.getElementById('room-preview-canvas');
+  roomRenderer=new THREE.WebGLRenderer({canvas:rc,antialias:true,alpha:true});
+  roomRenderer.setSize(rc.offsetWidth||400,rc.offsetHeight||180);
+  roomRenderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  roomScene=new THREE.Scene();roomScene.background=new THREE.Color(0x12083a);
+  roomCamera=new THREE.PerspectiveCamera(60,2.22,1,500);roomCamera.position.set(0,50,90);roomCamera.lookAt(0,20,0);
+  var rl=new THREE.AmbientLight(0x7744ff,.8);roomScene.add(rl);
+  var rsl=new THREE.PointLight(0xff88ff,3,200);rsl.position.set(-30,70,20);roomScene.add(rsl);
+  var rsl2=new THREE.PointLight(0xffaa44,2,180);rsl2.position.set(40,50,-20);roomScene.add(rsl2);
+  // Sol
+  var rf=new THREE.Mesh(new THREE.BoxGeometry(120,4,100),mc(0x2a1050));rf.position.y=-2;roomScene.add(rf);
+  // Murs
+  var mw=new THREE.Mesh(new THREE.BoxGeometry(120,60,4),mc(0x1a0830));mw.position.set(0,30,-50);roomScene.add(mw);
+  var mwl=new THREE.Mesh(new THREE.BoxGeometry(4,60,100),mc(0x160828));mwl.position.set(-60,30,0);roomScene.add(mwl);
+  // Fenêtre étoiles
+  var wf=new THREE.Mesh(new THREE.BoxGeometry(30,25,2),mc(0x223388));wf.position.set(30,38,-49);roomScene.add(wf);
+  for(var si2=0;si2<6;si2++){var wst=new THREE.Mesh(new THREE.SphereGeometry(1.5,6,5),mce(0xffffff,1));wst.position.set(28+(si2%3)*4,35+Math.floor(si2/3)*6,-47);roomScene.add(wst);}
+  // Meubles simples
+  var bed=new THREE.Mesh(new THREE.BoxGeometry(38,10,22),mc(0xff66bb));bed.position.set(-28,5,-28);roomScene.add(bed);addOL(bed,.06);
+  var bhead=new THREE.Mesh(new THREE.BoxGeometry(38,18,4),mc(0xff3399));bhead.position.set(-28,12,-40);roomScene.add(bhead);
+  var desk=new THREE.Mesh(new THREE.BoxGeometry(30,6,18),mc(0x8844cc));desk.position.set(30,14,-30);roomScene.add(desk);addOL(desk,.06);
+  var chair=new THREE.Mesh(new THREE.BoxGeometry(14,10,14),mc(0x6622aa));chair.position.set(30,5,-12);roomScene.add(chair);
+  var lamp=new THREE.Mesh(new THREE.SphereGeometry(6,8,6),mce(0xffeebb,.9));lamp.position.set(30,28,-30);roomScene.add(lamp);
+  var lampL=new THREE.PointLight(0xffeebb,2.5,90);lampL.position.set(30,30,-30);roomScene.add(lampL);
+  // Tapis
+  var rug=new THREE.Mesh(new THREE.BoxGeometry(50,1,40),mc(0x4433cc));rug.position.set(0,0.5,5);roomScene.add(rug);
+  // Kirby mini
+  var kb=new THREE.Mesh(new THREE.SphereGeometry(7,12,10),mc(0xff66bb));kb.position.set(0,7,20);roomScene.add(kb);addOL(kb,.08);
+  var lEye=new THREE.Mesh(new THREE.SphereGeometry(2,8,6),mc(0x1a3a88));lEye.position.set(-3,9,6);roomScene.add(lEye);
+  var rEye=lEye.clone();rEye.position.x=3;roomScene.add(rEye);
+  window._roomKirby=kb;window._roomLamp=lamp;window._roomLampL=lampL;
+  var _t=0;
+  function loop(){roomAnim=requestAnimationFrame(loop);_t+=.016;
+    kb.position.y=7+Math.sin(_t*2)*.8;
+    var gs=1+Math.sin(_t*3)*.06;lamp.scale.setScalar(gs);lampL.intensity=2.5+Math.sin(_t*2.5)*0.4;
+    roomCamera.position.x=Math.sin(_t*.18)*12;roomCamera.lookAt(0,20,0);
+    roomRenderer.render(roomScene,roomCamera);
+  }
+  loop();
+}
+
+// ══════════════════════════════════════════════════════
+// CRÉATURE COMPAGNON — Lumitos (toute mimi !)
+// ══════════════════════════════════════════════════════
+var cc=document.getElementById('creature-canvas');
+var ctx=cc.getContext('2d');
+var cW=88,cH=88;
+cc.width=cW;cc.height=cH;
+var cT=0,cBlink=0,cBlinkOp=0,cMood=0;
+var cVibrate=false,cVibrateT=0;
+var cColor='#88eeff';
+var PHRASES=[
+  '✨ Salut !','🌟 Tu veux jouer ?','💙 Je t\'aime !','🍓 J\'ai faim !','🎵 La la la~','⭐ Collectionne !','🦋 Joli Monde !','🎉 On s\'amuse ?','🌸 Joli ici !','💤 Zzz... oh !','🌈 Arc-en-ciel !','🍄 Champignon !',
+];
+var currentPhrase='✨ Salut !';
+var bubbleEl=document.getElementById('bubble');
+var bubbleTimer=0;
+var lastBubbleShow=0;
+
+function showBubble(txt){
+  currentPhrase=txt||PHRASES[Math.floor(Math.random()*PHRASES.length)];
+  bubbleEl.textContent=currentPhrase;bubbleEl.classList.add('show');
+  bubbleTimer=3.5;lastBubbleShow=Date.now();
+}
+
+function drawCreature(t){
+  ctx.clearRect(0,0,cW,cH);
+  var cx=cW/2,cy=cH/2+2;
+  var bob=Math.sin(t*2.2)*.8;
+  var squishX=1+Math.sin(t*4.4)*.03;
+  var squishY=1-Math.sin(t*4.4)*.03;
+  // Ombre
+  ctx.save();ctx.globalAlpha=.18;ctx.fillStyle='#003366';
+  ctx.beginPath();ctx.ellipse(cx,cH-6,17*squishX,5,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  // Corps principal
+  ctx.save();ctx.translate(cx,cy+bob);
+  if(cVibrate){ctx.translate((Math.random()-.5)*3,(Math.random()-.5)*3);}
+  ctx.scale(squishX,squishY);
+  // Glow
+  var grad=ctx.createRadialGradient(0,0,5,0,0,28);
+  grad.addColorStop(0,'rgba(136,238,255,.35)');grad.addColorStop(1,'rgba(0,100,200,0)');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,0,30,30,0,0,Math.PI*2);ctx.fill();
+  // Corps
+  var bodyGrad=ctx.createRadialGradient(-8,-8,2,0,0,25);
+  bodyGrad.addColorStop(0,'#ccf8ff');bodyGrad.addColorStop(.5,cColor);bodyGrad.addColorStop(1,'#2288cc');
+  ctx.fillStyle=bodyGrad;ctx.strokeStyle='#1a3a66';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.ellipse(0,0,24,22,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  // Antenne
+  ctx.strokeStyle='#1a3a66';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-4,-21);ctx.quadraticCurveTo(-8,-30,-5,-36);ctx.stroke();
+  ctx.fillStyle='#ffee44';ctx.strokeStyle='#886600';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(-5,-37,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+  // Oreilles (petites cornes rondes)
+  ctx.fillStyle=cColor;ctx.strokeStyle='#1a3a66';ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(-18,-14,8,6,-.45,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(18,-14,8,6,.45,0,Math.PI*2);ctx.fill();ctx.stroke();
+  // Queue
+  ctx.fillStyle='#66ddff';ctx.strokeStyle='#1a3a66';ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(20,8);ctx.quadraticCurveTo(32,4,28,14);ctx.quadraticCurveTo(24,20,18,15);ctx.fill();ctx.stroke();
+  // Ventre
+  var venGrad=ctx.createRadialGradient(0,5,2,0,5,16);
+  venGrad.addColorStop(0,'rgba(255,255,255,.4)');venGrad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=venGrad;ctx.beginPath();ctx.ellipse(0,6,13,11,0,0,Math.PI*2);ctx.fill();
+  // Joues
+  ctx.globalAlpha=.45;ctx.fillStyle='#ff99cc';
+  ctx.beginPath();ctx.ellipse(-14,5,8,5,-.2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(14,5,8,5,.2,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=1;
+  // Yeux
+  var blinkScale=1;
+  cBlink-=.016;if(cBlink<0){cBlinkOp=0;if(Math.random()<.01)cBlink=.18;}
+  if(cBlink>0&&cBlink<.08)blinkScale=Math.max(0,(cBlink-.04)/.04);
+  function drawEye(ex,ey){
+    ctx.fillStyle='#fff';ctx.strokeStyle='#1a3a66';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(ex,ey,7,7*Math.max(.08,blinkScale),0,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(blinkScale>.1){
+      ctx.fillStyle='#2244aa';ctx.beginPath();ctx.ellipse(ex+1,ey,4.5,4.5*blinkScale,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(ex+1.5,ey-.5,2.5,2.5*blinkScale,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.9)';ctx.beginPath();ctx.arc(ex+2.5,ey-2,1.5,0,Math.PI*2);ctx.fill();
+    }
+  }
+  drawEye(-9,-5);drawEye(9,-5);
+  // Bouche (sourire)
+  var mouthOpen=cVibrate?.35:.15;
+  ctx.strokeStyle='#1a3a66';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(0,7,7,Math.PI*mouthOpen,Math.PI*(1-mouthOpen));ctx.stroke();
+  // Pattes (ballotent)
+  var legSwing=Math.sin(t*3.5)*.15;
+  ctx.fillStyle=cColor;ctx.strokeStyle='#1a3a66';ctx.lineWidth=2;
+  ctx.save();ctx.translate(-14,18);ctx.rotate(legSwing);ctx.beginPath();ctx.ellipse(0,0,7,5,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+  ctx.save();ctx.translate(14,18);ctx.rotate(-legSwing);ctx.beginPath();ctx.ellipse(0,0,7,5,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+  ctx.restore();
+}
+
+// ─── Clic sur créature
+cc.addEventListener('click',function(){
+  cVibrate=true;cVibrateT=.5;
+  showBubble();
+  if(navigator.vibrate)navigator.vibrate([40,20,40]);
+});
+
+// ─── Mini-créature dans magasin
+var scc=document.getElementById('shop-creature-canvas');
+var sctx=scc?scc.getContext('2d'):null;
+function drawShopCreature(t){
+  if(!sctx)return;
+  sctx.clearRect(0,0,64,64);
+  var cx=32,cy=34+Math.sin(t*2.2)*1.5;
+  var g=sctx.createRadialGradient(cx-6,cy-6,2,cx,cy,20);
+  g.addColorStop(0,'#ccf8ff');g.addColorStop(.5,'#88eeff');g.addColorStop(1,'#2288cc');
+  sctx.fillStyle=g;sctx.strokeStyle='#1a3a66';sctx.lineWidth=2;
+  sctx.beginPath();sctx.ellipse(cx,cy,18,16,0,0,Math.PI*2);sctx.fill();sctx.stroke();
+  // Yeux
+  var bls=cBlink>0&&cBlink<.08?Math.max(0.1,(cBlink-.04)/.04):1;
+  sctx.fillStyle='#fff';sctx.beginPath();sctx.ellipse(cx-7,cy-3,5,5*bls,0,0,Math.PI*2);sctx.fill();
+  sctx.beginPath();sctx.ellipse(cx+7,cy-3,5,5*bls,0,0,Math.PI*2);sctx.fill();
+  sctx.fillStyle='#2244aa';sctx.beginPath();sctx.ellipse(cx-6,cy-3,3,3*bls,0,0,Math.PI*2);sctx.fill();
+  sctx.beginPath();sctx.ellipse(cx+8,cy-3,3,3*bls,0,0,Math.PI*2);sctx.fill();
+  // Joues
+  sctx.globalAlpha=.4;sctx.fillStyle='#ff99cc';
+  sctx.beginPath();sctx.ellipse(cx-11,cy+2,6,4,-.2,0,Math.PI*2);sctx.fill();
+  sctx.beginPath();sctx.ellipse(cx+11,cy+2,6,4,.2,0,Math.PI*2);sctx.fill();
+  sctx.globalAlpha=1;
+}
+
+// ── Bulles périodiques automatiques
+var _autoPhrasePh=Math.PI;
+var _nextAutoPhrase=4+Math.random()*5;
+
+// ══════════════════════════════════════════════════════
+// PARTICULES
+// ══════════════════════════════════════════════════════
+var pc=document.getElementById('particles-canvas');
+var pctx=pc.getContext('2d');
+pc.width=innerWidth;pc.height=innerHeight;
+window.addEventListener('resize',function(){pc.width=innerWidth;pc.height=innerHeight;});
+var PARTS=[];
+for(var pi=0;pi<40;pi++){
+  PARTS.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:1.5+Math.random()*4,
+    vx:(Math.random()-.5)*.5,vy:-.3-Math.random()*.6,
+    col:['#ffe066','#ff88cc','#88eeff','#aaffcc','#ffccff'][pi%5],
+    op:0.3+Math.random()*.6,ph:Math.random()*Math.PI*2,sp:.4+Math.random()*.8});
+}
+function drawParticles(t){
+  pctx.clearRect(0,0,pc.width,pc.height);
+  PARTS.forEach(function(p){
+    p.x+=p.vx;p.y+=p.vy;p.ph+=.04;
+    if(p.y<-10){p.y=pc.height+10;p.x=Math.random()*pc.width;}
+    var op=p.op*(0.7+Math.sin(p.ph*p.sp)*.3);
+    pctx.globalAlpha=op;pctx.fillStyle=p.col;
+    pctx.beginPath();pctx.arc(p.x+Math.sin(p.ph)*.4,p.y,p.r,0,Math.PI*2);pctx.fill();
+  });
+  pctx.globalAlpha=1;
+}
+
+// ══════════════════════════════════════════════════════
+// ÉTAT
+// ══════════════════════════════════════════════════════
+var gameState={stars:0,lives:10,coins:0,owned:[]};
+try{var saved=JSON.parse(localStorage.getItem('kdw_state')||'{}');Object.assign(gameState,saved);}catch(e){}
+function saveState(){try{localStorage.setItem('kdw_state',JSON.stringify(gameState));}catch(e){}}
+function refreshHUD(){
+  document.getElementById('star-count').textContent=gameState.stars;
+  document.getElementById('life-count').textContent=gameState.lives;
+  document.getElementById('coin-count').textContent=gameState.coins;
+  var shopCoins=document.getElementById('shop-coins');
+  if(shopCoins)shopCoins.textContent=gameState.coins+' 🪙';
+}
+refreshHUD();
+
+// ══════════════════════════════════════════════════════
+// BOUCLE PRINCIPALE
+// ══════════════════════════════════════════════════════
+var clock=new THREE.Clock(),tick=0;
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),.05);
+  tick++;var t=tick*.016;
+
+  // Nuages
+  CLOUDS.forEach(function(c){
+    c.position.x+=c.userData.spd*.4;
+    c.position.y=c.userData.baseY+Math.sin(t*.4+c.userData.ph)*5;
+    if(c.position.x>550)c.position.x=-550;
+  });
+  // Étoiles
+  STARS3.forEach(function(s){
+    s.rotation.y=t*.9;s.rotation.z=t*.5;
+    s.position.y=s.userData.by+Math.sin(t*1.8+s.userData.ph)*6;
+  });
+  // Caméra douce parallax souris
+  var tx=(window._mx||0.5-.5)*.04,ty=(window._my||0.5-.5)*.02;
+  camera.position.x+=(tx-camera.position.x)*.03;
+  camera.position.y+=(60+ty*30-camera.position.y)*.03;
+  camera.lookAt(0,30,0);
+
+  renderer.render(scene,camera);
+
+  // Créature
+  if(cVibrate){cVibrateT-=dt;if(cVibrateT<=0){cVibrate=false;}}
+  drawCreature(t);
+  drawShopCreature(t);
+  drawParticles(t);
+
+  // Bubble timer
+  if(bubbleTimer>0){bubbleTimer-=dt;if(bubbleTimer<=0){bubbleEl.classList.remove('show');}}
+  // Auto-phrase
+  _nextAutoPhrase-=dt;
+  if(_nextAutoPhrase<0){
+    _nextAutoPhrase=8+Math.random()*10;
+    if(!bubbleEl.classList.contains('show'))showBubble();
+  }
+
+  // Popup feedback
+  if(window._popTimer>0){window._popTimer-=dt;if(window._popTimer<=0){var fp=document.getElementById('float-popup');if(fp)fp.remove();}}
+}
+
+window.addEventListener('mousemove',function(e){window._mx=e.clientX/innerWidth;window._my=e.clientY/innerHeight;});
+window.addEventListener('touchmove',function(e){if(e.touches.length){window._mx=e.touches[0].clientX/innerWidth;window._my=e.touches[0].clientY/innerHeight;}},{passive:true});
+
+// ══════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════
+window.openModal=function(id){
+  var el=document.getElementById('modal-'+id);if(!el)return;
+  el.classList.add('open');
+  if(id==='maison'){setTimeout(initRoomPreview,100);}
+  if(id==='magasin'){refreshHUD();document.getElementById('shop-coins').textContent=gameState.coins+' 🪙';}
+  showBubble(id==='maison'?'🏠 Ta maison t\'attend !':id==='monde'?'🌍 Au aventure !':'🛒 J\'adore le magasin !');
+};
+window.closeModal=function(id){
+  var el=document.getElementById('modal-'+id);if(!el)return;
+  el.classList.remove('open');
+  if(id==='maison'&&roomAnim){cancelAnimationFrame(roomAnim);roomAnim=null;roomRenderer=null;}
+};
+// Fermer en cliquant hors de la boîte
+document.querySelectorAll('.modal-overlay').forEach(function(ov){
+  ov.addEventListener('click',function(e){if(e.target===ov){var m=ov.id.replace('modal-','');closeModal(m);}});
+});
+
+window.gotoGame=function(world){
+  // Transition vers le jeu
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:#0a0020;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Fredoka One",cursive;color:#fff';
+  var msg={maison:'🏠 Construction de ta maison…',plaine:'🌸 Plaine des Fleurs',foret:'🌲 Forêt Enchantée',neige:'❄️ Pic des Neiges',ocean:'🐟 Domaine Aquatique',iles:'🌴 Îles Tropicales'}[world]||'🌍 Chargement…';
+  ov.innerHTML='<div style="font-size:clamp(24px,5vw,36px);margin-bottom:16px;text-shadow:0 4px 0 #6600aa">'+msg+'</div><div style="font-size:14px;opacity:.6">Chargement en cours…</div>';
+  document.body.appendChild(ov);
+  // Redirige vers le jeu principal (la page originale) avec paramètre de monde
+  setTimeout(function(){
+    // Ici on retournerait au jeu : window.location.href='game.html?world='+world;
+    // Pour la démo, on affiche juste le message et on revient
+    document.body.removeChild(ov);
+    document.querySelectorAll('.modal-overlay').forEach(function(m){m.classList.remove('open');});
+    showBubble('🎮 C\'est parti !');
+    spawnFloatPopup('▶ Lancement du jeu !');
+  },1800);
+};
+
+// ══════════════════════════════════════════════════════
+// SHOP LOGIC
+// ══════════════════════════════════════════════════════
+window.switchTab=function(tab,btn){
+  document.querySelectorAll('.shop-tab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('tab-meubles').style.display=tab==='meubles'?'grid':'none';
+  document.getElementById('tab-deco').style.display=tab==='deco'?'grid':'none';
+  document.getElementById('tab-creatures').style.display=tab==='creatures'?'flex':'none';
+};
+
+window.buyItem=function(el,price){
+  if(el.classList.contains('owned')){showBubble('✅ Déjà acheté !');return;}
+  if(gameState.coins<price){showBubble('🪙 Pas assez de pièces !');spawnFloatPopup('❌ Pièces insuffisantes');if(navigator.vibrate)navigator.vibrate([80,40,80]);return;}
+  gameState.coins-=price;
+  el.classList.add('owned');
+  el.querySelector('.s-price').textContent='✅ Possédé';
+  var badge=el.querySelector('.s-badge');if(badge)badge.remove();
+  saveState();refreshHUD();
+  document.getElementById('shop-coins').textContent=gameState.coins+' 🪙';
+  showBubble('🎉 Super achat !');
+  spawnFloatPopup('🛒 Acheté ! -'+price+' 🪙');
+  if(navigator.vibrate)navigator.vibrate([30,20,60]);
+};
+
+// ══════════════════════════════════════════════════════
+// POPUP FLOTTANT
+// ══════════════════════════════════════════════════════
+function spawnFloatPopup(txt){
+  var fp=document.getElementById('float-popup');if(fp)fp.remove();
+  var el=document.createElement('div');el.id='float-popup';
+  el.style.cssText='position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0);font-family:"Fredoka One",cursive;font-size:22px;color:#fff;text-shadow:0 3px 0 #440088;pointer-events:none;z-index:100;transition:transform .2s cubic-bezier(.34,1.56,.64,1),opacity .4s ease;background:rgba(80,0,180,.85);border-radius:20px;padding:12px 22px;border:2px solid rgba(200,150,255,.5)';
+  el.textContent=txt;document.body.appendChild(el);
+  requestAnimationFrame(function(){el.style.transform='translate(-50%,-60%) scale(1)';});
+  window._popTimer=2;
+  setTimeout(function(){el.style.opacity='0';},1400);
+}
+
+// ══════════════════════════════════════════════════════
+// BOUTONS
+// ══════════════════════════════════════════════════════
+document.getElementById('mute-btn').addEventListener('click',function(){
+  this.textContent=this.textContent.includes('🔊')?'🔇 Muet':'🔊 Son';
+  showBubble(this.textContent.includes('🔇')?'🔇 Silence…':'🔊 Musique !');
+});
+document.getElementById('settings-btn').addEventListener('click',function(){
+  showBubble('⚙️ Paramètres bientôt !');
+  spawnFloatPopup('⚙️ Bientôt disponible !');
+});
+
+// Effets boutons menu
+document.querySelectorAll('.menu-btn').forEach(function(btn){
+  btn.addEventListener('mouseenter',function(){if(navigator.vibrate)navigator.vibrate([15]);});
+  btn.addEventListener('click',function(){this.classList.add('pop');setTimeout(function(){btn.classList.remove('pop');},250);});
+});
+
+// Phrase initiale
+setTimeout(function(){showBubble('✨ Salut ! Je suis Lumitos !');},800);
+setTimeout(function(){showBubble('🌟 Où veux-tu aller ?');},4500);
+
+animate();
+
+})();
+</script>
+
+</body>
+</html>
